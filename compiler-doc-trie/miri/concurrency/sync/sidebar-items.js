@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["LAZY_INIT_COOKIE"],"macro":["declare_id"],"struct":["Condvar","CondvarId","Futex","FutexRef","FutexWaiter","Mutex","MutexId","RwLock","RwLockId","SynchronizationObjects"],"trait":["EvalContextExt","EvalContextExtPriv"]};

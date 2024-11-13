@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DisallowedPath","MatchLintBehaviour","PubUnderscoreFieldsBehaviour","SourceItemOrderingCategory","SourceItemOrderingModuleItemKind","SourceItemOrderingTraitAssocItemKind"],"macro":["unimplemented_serialize"],"struct":["MacroMatcher","Rename","SourceItemOrdering","SourceItemOrderingModuleItemGroupings","SourceItemOrderingTraitAssocItemKinds"]};

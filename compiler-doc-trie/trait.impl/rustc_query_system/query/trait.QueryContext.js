@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["rustc_query_impl",[["impl QueryContext for <a class=\"struct\" href=\"rustc_query_impl/plumbing/struct.QueryCtxt.html\" title=\"struct rustc_query_impl::plumbing::QueryCtxt\">QueryCtxt</a>&lt;'_&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[204]}
