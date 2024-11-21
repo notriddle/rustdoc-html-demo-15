@@ -4443,9 +4443,12 @@ ${item.displayPath}<span class="${type}">${name}</span>\
             }
             const rndName = rndItem.name;
             output.innerHTML = "Example searches:<ul>" +
-                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndPath) + "\">" + rndPath + "</a></li>" +
-                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndType) + "\">" + rndType + "</a></li>" +
-                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndName) + "\">" + rndName + "</a></li>" +
+                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndPath) +
+                    "\">" + rndPath + "</a></li>" +
+                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndType) +
+                    "\">" + rndType + "</a></li>" +
+                "<li><a href=\"" + getNakedUrl() + "?search=" + encodeURIComponent(rndName) +
+                    "\">" + rndName + "</a></li>" +
                 "</ul>";
         } else {
             output.innerHTML = "No results :(<br/>" +
