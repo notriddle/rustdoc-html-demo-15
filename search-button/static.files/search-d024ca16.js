@@ -4453,7 +4453,11 @@ ${item.displayPath}<span class="${type}">${name}</span>\
             encodeURIComponent("rust " + query.userQuery) +
             "\">DuckDuckGo</a>?<br/><br/>";
         }
-        output.innerHTML += "Or try looking in one of these:<ul><li>The <a " +
+        const channel = getVar("channel");
+        output.innerHTML += "Or try looking in one of these:<ul><li>" +
+            `For a full list of all search features, take a look <a \
+href="https://doc.rust-lang.org/${channel}/rustdoc/read-documentation/search.html">here</a>.` +
+            "</li><li>The <a " +
             "href=\"https://doc.rust-lang.org/reference/index.html\">Rust Reference</a> " +
             " for technical details about the language.</li><li><a " +
             "href=\"https://doc.rust-lang.org/rust-by-example/index.html\">Rust By " +
