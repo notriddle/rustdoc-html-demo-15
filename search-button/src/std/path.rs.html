@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/path.rs`."><title>path.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../static.files/storage-7f263dff.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.84.0.js"></script><script defer src="../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>path.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/path.rs`."><title>path.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../static.files/storage-5ba24442.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.85.0.js"></script><script defer src="../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>path.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -3585,7 +3585,10 @@
 <a href="#3584" id="3584">3584</a>
 <a href="#3585" id="3585">3585</a>
 <a href="#3586" id="3586">3586</a>
-<a href="#3587" id="3587">3587</a></pre></div><pre class="rust"><code><span class="doccomment">//! Cross-platform path manipulation.
+<a href="#3587" id="3587">3587</a>
+<a href="#3588" id="3588">3588</a>
+<a href="#3589" id="3589">3589</a>
+<a href="#3590" id="3590">3590</a></pre></div><pre class="rust"><code><span class="doccomment">//! Cross-platform path manipulation.
 //!
 //! This module provides two types, [`PathBuf`] and [`Path`] (akin to [`String`]
 //! and [`str`]), for working with paths abstractly. These types are thin wrappers
@@ -4745,6 +4748,7 @@
 /// Note that `PathBuf` does not always sanitize arguments, for example
 /// [`push`] allows paths built from strings which include separators:
 ///
+/// ```
 /// use std::path::PathBuf;
 ///
 /// let mut path = PathBuf::new();
@@ -4753,6 +4757,7 @@
 /// path.push("windows");
 /// path.push(r"..\otherdir");
 /// path.push("system32");
+/// ```
 ///
 /// The behavior of `PathBuf` may be changed to a panic on such inputs
 /// in the future. [`Extend::extend`] should be used to add multi-part paths.
@@ -5349,7 +5354,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"box_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"box_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>Path&gt; <span class="kw">for </span>Box&lt;Path&gt; {
     <span class="doccomment">/// Creates a boxed [`Path`] from a reference.
     ///
@@ -5587,7 +5592,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>Path&gt; <span class="kw">for </span>Arc&lt;Path&gt; {
     <span class="doccomment">/// Converts a [`Path`] into an [`Arc`] by copying the [`Path`] data into a new [`Arc`] buffer.
     </span><span class="attr">#[inline]
@@ -5617,7 +5622,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>Path&gt; <span class="kw">for </span>Rc&lt;Path&gt; {
     <span class="doccomment">/// Converts a [`Path`] into an [`Rc`] by copying the [`Path`] data into a new [`Rc`] buffer.
     </span><span class="attr">#[inline]
@@ -6091,6 +6096,7 @@
     /// assert_eq!(path.strip_prefix("/test/haha/foo.txt/"), Ok(Path::new("")));
     ///
     /// assert!(path.strip_prefix("test").is_err());
+    /// assert!(path.strip_prefix("/te").is_err());
     /// assert!(path.strip_prefix("/haha").is_err());
     ///
     /// let prefix = PathBuf::from("/test/");
@@ -7167,7 +7173,7 @@
 </span><span class="kw">pub fn </span>absolute&lt;P: AsRef&lt;Path&gt;&gt;(path: P) -&gt; io::Result&lt;PathBuf&gt; {
     <span class="kw">let </span>path = path.as_ref();
     <span class="kw">if </span>path.as_os_str().is_empty() {
-        <span class="prelude-val">Err</span>(<span class="macro">io::const_io_error!</span>(io::ErrorKind::InvalidInput, <span class="string">"cannot make an empty path absolute"</span>,))
+        <span class="prelude-val">Err</span>(<span class="macro">io::const_error!</span>(io::ErrorKind::InvalidInput, <span class="string">"cannot make an empty path absolute"</span>,))
     } <span class="kw">else </span>{
         sys::path::absolute(path)
     }

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/thread/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../static.files/storage-7f263dff.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.84.0.js"></script><script defer src="../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/thread/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/thread/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/thread/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -1993,7 +1993,16 @@
 <a href="#1992" id="1992">1992</a>
 <a href="#1993" id="1993">1993</a>
 <a href="#1994" id="1994">1994</a>
-<a href="#1995" id="1995">1995</a></pre></div><pre class="rust"><code><span class="doccomment">//! Native threads.
+<a href="#1995" id="1995">1995</a>
+<a href="#1996" id="1996">1996</a>
+<a href="#1997" id="1997">1997</a>
+<a href="#1998" id="1998">1998</a>
+<a href="#1999" id="1999">1999</a>
+<a href="#2000" id="2000">2000</a>
+<a href="#2001" id="2001">2001</a>
+<a href="#2002" id="2002">2002</a>
+<a href="#2003" id="2003">2003</a>
+<a href="#2004" id="2004">2004</a></pre></div><pre class="rust"><code><span class="doccomment">//! Native threads.
 //!
 //! ## The threading model
 //!
@@ -2181,7 +2190,7 @@
 
 <span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
 </span><span class="kw">pub use </span>current::current;
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>current::{current_id, drop_current, set_current, try_current};
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>current::{current_id, current_or_unnamed, drop_current, set_current, try_current};
 
 <span class="kw">mod </span>spawnhook;
 
@@ -3016,11 +3025,11 @@
 ///
 /// # Memory Ordering
 ///
-/// Calls to `park` _synchronize-with_ calls to `unpark`, meaning that memory
+/// Calls to `unpark` _synchronize-with_ calls to `park`, meaning that memory
 /// operations performed before a call to `unpark` are made visible to the thread that
 /// consumes the token and returns from `park`. Note that all `park` and `unpark`
-/// operations for a given thread form a total order and `park` synchronizes-with
-/// _all_ prior `unpark` operations.
+/// operations for a given thread form a total order and _all_ prior `unpark` operations
+/// synchronize-with `park`.
 ///
 /// In atomic ordering terms, `unpark` performs a `Release` operation and `park`
 /// performs the corresponding `Acquire` operation. Calls to `unpark` for the same
@@ -3141,9 +3150,9 @@
 </span><span class="attr">#[stable(feature = <span class="string">"park_timeout"</span>, since = <span class="string">"1.4.0"</span>)]
 </span><span class="kw">pub fn </span>park_timeout(dur: Duration) {
     <span class="kw">let </span>guard = PanicGuard;
-    <span class="comment">// SAFETY: park_timeout is called on the parker owned by this thread.
+    <span class="comment">// SAFETY: park_timeout is called on a handle owned by this thread.
     </span><span class="kw">unsafe </span>{
-        current().<span class="number">0</span>.parker().park_timeout(dur);
+        current().park_timeout(dur);
     }
     <span class="comment">// No panic occurred, do not abort.
     </span>forget(guard);
@@ -3439,6 +3448,15 @@
     /// May only be called from the thread to which this handle belongs.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>park(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="kw">unsafe </span>{ <span class="self">self</span>.<span class="number">0</span>.parker().park() }
+    }
+
+    <span class="doccomment">/// Like the public [`park_timeout`], but callable on any handle. This is
+    /// used to allow parking in TLS destructors.
+    ///
+    /// # Safety
+    /// May only be called from the thread to which this handle belongs.
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>park_timeout(<span class="kw-2">&amp;</span><span class="self">self</span>, dur: Duration) {
+        <span class="kw">unsafe </span>{ <span class="self">self</span>.<span class="number">0</span>.parker().park_timeout(dur) }
     }
 
     <span class="doccomment">/// Atomically makes the handle's token available if it is not already.

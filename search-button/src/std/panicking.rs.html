@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/panicking.rs`."><title>panicking.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../static.files/storage-7f263dff.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.84.0.js"></script><script defer src="../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>panicking.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/panicking.rs`."><title>panicking.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../static.files/storage-5ba24442.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.85.0.js"></script><script defer src="../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>panicking.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -870,7 +870,23 @@
 <a href="#869" id="869">869</a>
 <a href="#870" id="870">870</a>
 <a href="#871" id="871">871</a>
-<a href="#872" id="872">872</a></pre></div><pre class="rust"><code><span class="doccomment">//! Implementation of various bits and pieces of the `panic!` macro and
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a></pre></div><pre class="rust"><code><span class="doccomment">//! Implementation of various bits and pieces of the `panic!` macro and
 //! associated runtime pieces.
 //!
 //! Specifically, this module contains the implementation of:
@@ -898,6 +914,22 @@
 <span class="kw">use </span><span class="kw">crate</span>::sys::backtrace;
 <span class="kw">use </span><span class="kw">crate</span>::sys::stdio::panic_output;
 <span class="kw">use crate</span>::{fmt, intrinsics, process, thread};
+
+<span class="comment">// This forces codegen of the function called by panic!() inside the std crate, rather than in
+// downstream crates. Primarily this is useful for rustc's codegen tests, which rely on noticing
+// complete removal of panic from generated IR. Since begin_panic is inline(never), it's only
+// codegen'd once per crate-graph so this pushes that to std rather than our codegen test crates.
+//
+// (See https://github.com/rust-lang/rust/pull/123244 for more info on why).
+//
+// If this is causing problems we can also modify those codegen tests to use a crate type like
+// cdylib which doesn't export "Rust" symbols to downstream linkage units.
+</span><span class="attr">#[unstable(feature = <span class="string">"libstd_sys_internals"</span>, reason = <span class="string">"used by the panic! macro"</span>, issue = <span class="string">"none"</span>)]
+#[doc(hidden)]
+#[allow(dead_code)]
+#[used(compiler)]
+</span><span class="kw">pub static </span>EMPTY_PANIC: <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) -&gt; ! =
+    begin_panic::&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; <span class="kw">as fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) -&gt; !;
 
 <span class="comment">// Binary interface to the panic runtime that the standard library depends on.
 //
@@ -1479,7 +1511,7 @@
             <span class="comment">// Lazily, the first time this gets called, run the actual string formatting.
             </span><span class="self">self</span>.string.get_or_insert_with(|| {
                 <span class="kw">let </span><span class="kw-2">mut </span>s = String::new();
-                <span class="kw">let </span><span class="kw-2">mut </span>fmt = fmt::Formatter::new(<span class="kw-2">&amp;mut </span>s);
+                <span class="kw">let </span><span class="kw-2">mut </span>fmt = fmt::Formatter::new(<span class="kw-2">&amp;mut </span>s, fmt::FormattingOptions::new());
                 <span class="kw">let </span>_err = fmt::Display::fmt(<span class="kw-2">&amp;</span>inner, <span class="kw-2">&amp;mut </span>fmt);
                 s
             })

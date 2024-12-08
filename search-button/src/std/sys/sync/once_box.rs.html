@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/sys/sync/once_box.rs`."><title>once_box.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../../static.files/storage-7f263dff.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.84.0.js"></script><script defer src="../../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/sync/</div>once_box.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sys/sync/once_box.rs`."><title>once_box.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.85.0.js"></script><script defer src="../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/sync/</div>once_box.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -80,7 +80,8 @@
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a></pre></div><pre class="rust"><code><span class="doccomment">//! A racily-initialized alternative to `OnceLock&lt;Box&lt;T&gt;&gt;`.
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a></pre></div><pre class="rust"><code><span class="doccomment">//! A racily-initialized alternative to `OnceLock&lt;Box&lt;T&gt;&gt;`.
 //!
 //! This is used to implement synchronization primitives that need allocation,
 //! like the pthread versions.
@@ -88,6 +89,7 @@
 </span><span class="attr">#![allow(dead_code)] </span><span class="comment">// Only used on some platforms.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::mem::replace;
+<span class="kw">use </span><span class="kw">crate</span>::pin::Pin;
 <span class="kw">use </span><span class="kw">crate</span>::ptr::null_mut;
 <span class="kw">use </span><span class="kw">crate</span>::sync::atomic::AtomicPtr;
 <span class="kw">use </span><span class="kw">crate</span>::sync::atomic::Ordering::{Acquire, Relaxed, Release};
@@ -109,46 +111,46 @@
     /// pointer load in this function can be performed with relaxed ordering,
     /// potentially allowing the optimizer to turn code like this:
     /// ```rust, ignore
-    /// once_box.get_or_init(|| Box::new(42));
+    /// once_box.get_or_init(|| Box::pin(42));
     /// unsafe { once_box.get_unchecked() }
     /// ```
     /// into
     /// ```rust, ignore
-    /// once_box.get_or_init(|| Box::new(42))
+    /// once_box.get_or_init(|| Box::pin(42))
     /// ```
     ///
     /// # Safety
     /// This causes undefined behavior if the assumption above is violated.
     </span><span class="attr">#[inline]
-    </span><span class="kw">pub unsafe fn </span>get_unchecked(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
-        <span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span><span class="self">self</span>.ptr.load(Relaxed) }
+    </span><span class="kw">pub unsafe fn </span>get_unchecked(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Pin&lt;<span class="kw-2">&amp;</span>T&gt; {
+        <span class="kw">unsafe </span>{ Pin::new_unchecked(<span class="kw-2">&amp;*</span><span class="self">self</span>.ptr.load(Relaxed)) }
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>get_or_init(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw">impl </span>FnOnce() -&gt; Box&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span>T {
+    </span><span class="kw">pub fn </span>get_or_init(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw">impl </span>FnOnce() -&gt; Pin&lt;Box&lt;T&gt;&gt;) -&gt; Pin&lt;<span class="kw-2">&amp;</span>T&gt; {
         <span class="kw">let </span>ptr = <span class="self">self</span>.ptr.load(Acquire);
         <span class="kw">match unsafe </span>{ ptr.as_ref() } {
-            <span class="prelude-val">Some</span>(val) =&gt; val,
+            <span class="prelude-val">Some</span>(val) =&gt; <span class="kw">unsafe </span>{ Pin::new_unchecked(val) },
             <span class="prelude-val">None </span>=&gt; <span class="self">self</span>.initialize(f),
         }
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>take(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Box&lt;T&gt;&gt; {
+    </span><span class="kw">pub fn </span>take(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Pin&lt;Box&lt;T&gt;&gt;&gt; {
         <span class="kw">let </span>ptr = replace(<span class="self">self</span>.ptr.get_mut(), null_mut());
-        <span class="kw">if </span>!ptr.is_null() { <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ Box::from_raw(ptr) }) } <span class="kw">else </span>{ <span class="prelude-val">None </span>}
+        <span class="kw">if </span>!ptr.is_null() { <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ Pin::new_unchecked(Box::from_raw(ptr)) }) } <span class="kw">else </span>{ <span class="prelude-val">None </span>}
     }
 
     <span class="attr">#[cold]
-    </span><span class="kw">fn </span>initialize(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw">impl </span>FnOnce() -&gt; Box&lt;T&gt;) -&gt; <span class="kw-2">&amp;</span>T {
-        <span class="kw">let </span>new_ptr = Box::into_raw(f());
+    </span><span class="kw">fn </span>initialize(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw">impl </span>FnOnce() -&gt; Pin&lt;Box&lt;T&gt;&gt;) -&gt; Pin&lt;<span class="kw-2">&amp;</span>T&gt; {
+        <span class="kw">let </span>new_ptr = Box::into_raw(<span class="kw">unsafe </span>{ Pin::into_inner_unchecked(f()) });
         <span class="kw">match </span><span class="self">self</span>.ptr.compare_exchange(null_mut(), new_ptr, Release, Acquire) {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>new_ptr },
+            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="kw">unsafe </span>{ Pin::new_unchecked(<span class="kw-2">&amp;*</span>new_ptr) },
             <span class="prelude-val">Err</span>(ptr) =&gt; {
                 <span class="comment">// Lost the race to another thread.
                 // Drop the value we created, and use the one from the other thread instead.
                 </span>drop(<span class="kw">unsafe </span>{ Box::from_raw(new_ptr) });
-                <span class="kw">unsafe </span>{ <span class="kw-2">&amp;*</span>ptr }
+                <span class="kw">unsafe </span>{ Pin::new_unchecked(<span class="kw-2">&amp;*</span>ptr) }
             }
         }
     }

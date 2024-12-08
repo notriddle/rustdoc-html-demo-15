@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/sys/cmath.rs`."><title>cmath.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../static.files/storage-7f263dff.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.84.0.js"></script><script defer src="../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/</div>cmath.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sys/cmath.rs`."><title>cmath.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/</div>cmath.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -101,7 +101,15 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a></pre></div><pre class="rust"><code><span class="attr">#![cfg(not(test))]
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a></pre></div><pre class="rust"><code><span class="attr">#![cfg(not(test))]
 
 </span><span class="comment">// These symbols are all defined by `libm`,
 // or by `compiler-builtins` on unsupported platforms.
@@ -129,7 +137,8 @@
     <span class="kw">pub fn </span>tgamma(n: f64) -&gt; f64;
     <span class="kw">pub fn </span>tgammaf(n: f32) -&gt; f32;
     <span class="kw">pub fn </span>lgamma_r(n: f64, s: <span class="kw-2">&amp;mut </span>i32) -&gt; f64;
-    <span class="kw">pub fn </span>lgammaf_r(n: f32, s: <span class="kw-2">&amp;mut </span>i32) -&gt; f32;
+    <span class="attr">#[cfg(not(target_os = <span class="string">"aix"</span>))]
+    </span><span class="kw">pub fn </span>lgammaf_r(n: f32, s: <span class="kw-2">&amp;mut </span>i32) -&gt; f32;
 
     <span class="kw">pub fn </span>acosf128(n: f128) -&gt; f128;
     <span class="kw">pub fn </span>asinf128(n: f128) -&gt; f128;
@@ -157,6 +166,13 @@
         <span class="kw">pub fn </span>tanf(n: f32) -&gt; f32;
         <span class="kw">pub fn </span>tanhf(n: f32) -&gt; f32;
     }}
+}
+
+<span class="comment">// On AIX, we don't have lgammaf_r only the f64 version, so we can
+// use the f64 version lgamma_r
+</span><span class="attr">#[cfg(target_os = <span class="string">"aix"</span>)]
+</span><span class="kw">pub unsafe fn </span>lgammaf_r(n: f32, s: <span class="kw-2">&amp;mut </span>i32) -&gt; f32 {
+    lgamma_r(n.into(), s) <span class="kw">as </span>f32
 }
 
 <span class="comment">// On 32-bit x86 MSVC these functions aren't defined, so we just define shims

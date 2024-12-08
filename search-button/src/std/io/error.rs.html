@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/io/error.rs`."><title>error.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../static.files/storage-7f263dff.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.84.0.js"></script><script defer src="../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/io/</div>error.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/io/error.rs`."><title>error.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/io/</div>error.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -1066,7 +1066,20 @@
 <a href="#1065" id="1065">1065</a>
 <a href="#1066" id="1066">1066</a>
 <a href="#1067" id="1067">1067</a>
-<a href="#1068" id="1068">1068</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#1068" id="1068">1068</a>
+<a href="#1069" id="1069">1069</a>
+<a href="#1070" id="1070">1070</a>
+<a href="#1071" id="1071">1071</a>
+<a href="#1072" id="1072">1072</a>
+<a href="#1073" id="1073">1073</a>
+<a href="#1074" id="1074">1074</a>
+<a href="#1075" id="1075">1075</a>
+<a href="#1076" id="1076">1076</a>
+<a href="#1077" id="1077">1077</a>
+<a href="#1078" id="1078">1078</a>
+<a href="#1079" id="1079">1079</a>
+<a href="#1080" id="1080">1080</a>
+<a href="#1081" id="1081">1081</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
 <span class="attr">#[cfg(all(target_pointer_width = <span class="string">"64"</span>, not(target_os = <span class="string">"uefi"</span>)))]
@@ -1144,31 +1157,31 @@
 </span><span class="attr">#[allow(dead_code)]
 </span><span class="kw">impl </span>Error {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>INVALID_UTF8: <span class="self">Self </span>=
-        <span class="macro">const_io_error!</span>(ErrorKind::InvalidData, <span class="string">"stream did not contain valid UTF-8"</span>);
+        <span class="macro">const_error!</span>(ErrorKind::InvalidData, <span class="string">"stream did not contain valid UTF-8"</span>);
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>READ_EXACT_EOF: <span class="self">Self </span>=
-        <span class="macro">const_io_error!</span>(ErrorKind::UnexpectedEof, <span class="string">"failed to fill whole buffer"</span>);
+        <span class="macro">const_error!</span>(ErrorKind::UnexpectedEof, <span class="string">"failed to fill whole buffer"</span>);
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>UNKNOWN_THREAD_COUNT: <span class="self">Self </span>= <span class="macro">const_io_error!</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>UNKNOWN_THREAD_COUNT: <span class="self">Self </span>= <span class="macro">const_error!</span>(
         ErrorKind::NotFound,
         <span class="string">"The number of hardware threads is not known for the target platform"
     </span>);
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>UNSUPPORTED_PLATFORM: <span class="self">Self </span>=
-        <span class="macro">const_io_error!</span>(ErrorKind::Unsupported, <span class="string">"operation not supported on this platform"</span>);
+        <span class="macro">const_error!</span>(ErrorKind::Unsupported, <span class="string">"operation not supported on this platform"</span>);
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>WRITE_ALL_EOF: <span class="self">Self </span>=
-        <span class="macro">const_io_error!</span>(ErrorKind::WriteZero, <span class="string">"failed to write whole buffer"</span>);
+        <span class="macro">const_error!</span>(ErrorKind::WriteZero, <span class="string">"failed to write whole buffer"</span>);
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>ZERO_TIMEOUT: <span class="self">Self </span>=
-        <span class="macro">const_io_error!</span>(ErrorKind::InvalidInput, <span class="string">"cannot set a 0 duration timeout"</span>);
+        <span class="macro">const_error!</span>(ErrorKind::InvalidInput, <span class="string">"cannot set a 0 duration timeout"</span>);
 }
 
 <span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
 </span><span class="kw">impl </span>From&lt;alloc::ffi::NulError&gt; <span class="kw">for </span>Error {
     <span class="doccomment">/// Converts a [`alloc::ffi::NulError`] into a [`Error`].
     </span><span class="kw">fn </span>from(<span class="kw">_</span>: alloc::ffi::NulError) -&gt; Error {
-        <span class="macro">const_io_error!</span>(ErrorKind::InvalidInput, <span class="string">"data provided contains a nul byte"</span>)
+        <span class="macro">const_error!</span>(ErrorKind::InvalidInput, <span class="string">"data provided contains a nul byte"</span>)
     }
 }
 
@@ -1219,27 +1232,38 @@
 // (For the sake of being explicit: the alignment requirement here only matters
 // if `error/repr_bitpacked.rs` is in use — for the unpacked repr it doesn't
 // matter at all)
-</span><span class="attr">#[repr(align(<span class="number">4</span>))]
+</span><span class="attr">#[doc(hidden)]
+#[unstable(feature = <span class="string">"io_const_error_internals"</span>, issue = <span class="string">"none"</span>)]
+#[repr(align(<span class="number">4</span>))]
 #[derive(Debug)]
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>SimpleMessage {
-    kind: ErrorKind,
-    message: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
+</span><span class="kw">pub struct </span>SimpleMessage {
+    <span class="kw">pub </span>kind: ErrorKind,
+    <span class="kw">pub </span>message: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
 }
 
-<span class="kw">impl </span>SimpleMessage {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const fn </span>new(kind: ErrorKind, message: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{ kind, message }
-    }
-}
-
-<span class="doccomment">/// Creates and returns an `io::Error` for a given `ErrorKind` and constant
-/// message. This doesn't allocate.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">macro </span>const_io_error(<span class="macro-nonterminal">$kind</span>:expr, <span class="macro-nonterminal">$message</span>:expr $(,)<span class="question-mark">?</span>) {
-    <span class="macro-nonterminal">$crate::io::error::Error::from_static_message</span>({
-        <span class="kw">const </span>MESSAGE_DATA: <span class="macro-nonterminal">$crate::io::error::SimpleMessage </span>=
-            <span class="macro-nonterminal">$crate::io::error::SimpleMessage::new</span>(<span class="macro-nonterminal">$kind</span>, <span class="macro-nonterminal">$message</span>);
-        <span class="kw-2">&amp;</span>MESSAGE_DATA
-    })
+<span class="doccomment">/// Creates a new I/O error from a known kind of error and a string literal.
+///
+/// Contrary to [`Error::new`], this macro does not allocate and can be used in
+/// `const` contexts.
+///
+/// # Example
+/// ```
+/// #![feature(io_const_error)]
+/// use std::io::{const_error, Error, ErrorKind};
+///
+/// const FAIL: Error = const_error!(ErrorKind::Unsupported, "tried something that never works");
+///
+/// fn not_here() -&gt; Result&lt;(), Error&gt; {
+///     Err(FAIL)
+/// }
+/// ```
+</span><span class="attr">#[rustc_macro_transparency = <span class="string">"semitransparent"</span>]
+#[unstable(feature = <span class="string">"io_const_error"</span>, issue = <span class="string">"133448"</span>)]
+#[allow_internal_unstable(hint_must_use, io_const_error_internals)]
+</span><span class="kw">pub macro </span>const_error(<span class="macro-nonterminal">$kind</span>:expr, <span class="macro-nonterminal">$message</span>:expr $(,)<span class="question-mark">?</span>) {
+    <span class="macro-nonterminal">$crate::hint::must_use</span>(<span class="macro-nonterminal">$crate::io::Error::from_static_message</span>(
+        <span class="kw">const </span>{ <span class="kw-2">&amp;</span><span class="macro-nonterminal">$crate::io::SimpleMessage </span>{ kind: <span class="macro-nonterminal">$kind</span>, message: <span class="macro-nonterminal">$message </span>} },
+    ))
 }
 
 <span class="comment">// As with `SimpleMessage`: `#[repr(align(4))]` here is just because
@@ -1395,9 +1419,9 @@
     /// example, on Unix, a named pipe opened with `File::open`.
     </span><span class="attr">#[stable(feature = <span class="string">"io_error_a_bit_more"</span>, since = <span class="string">"1.83.0"</span>)]
     </span>NotSeekable,
-    <span class="doccomment">/// Filesystem quota was exceeded.
-    </span><span class="attr">#[unstable(feature = <span class="string">"io_error_more"</span>, issue = <span class="string">"86442"</span>)]
-    </span>FilesystemQuotaExceeded,
+    <span class="doccomment">/// Filesystem quota or some other kind of quota was exceeded.
+    </span><span class="attr">#[stable(feature = <span class="string">"io_error_quota_exceeded"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+    </span>QuotaExceeded,
     <span class="doccomment">/// File larger than allowed or supported.
     ///
     /// This might arise from a hard limit of the underlying filesystem or file access API, or from
@@ -1421,7 +1445,7 @@
     </span><span class="attr">#[stable(feature = <span class="string">"io_error_a_bit_more"</span>, since = <span class="string">"1.83.0"</span>)]
     </span>Deadlock,
     <span class="doccomment">/// Cross-device or cross-filesystem (hard) link or rename.
-    </span><span class="attr">#[unstable(feature = <span class="string">"io_error_more"</span>, issue = <span class="string">"86442"</span>)]
+    </span><span class="attr">#[stable(feature = <span class="string">"io_error_crosses_devices"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
     </span>CrossesDevices,
     <span class="doccomment">/// Too many (hard) links to the same filesystem object.
     ///
@@ -1503,9 +1527,9 @@
 <span class="kw">impl </span>ErrorKind {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_str(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
         <span class="kw">use </span>ErrorKind::<span class="kw-2">*</span>;
-        <span class="comment">// tidy-alphabetical-start
-        </span><span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
-            AddrInUse =&gt; <span class="string">"address in use"</span>,
+        <span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+            <span class="comment">// tidy-alphabetical-start
+            </span>AddrInUse =&gt; <span class="string">"address in use"</span>,
             AddrNotAvailable =&gt; <span class="string">"address not available"</span>,
             AlreadyExists =&gt; <span class="string">"entity already exists"</span>,
             ArgumentListTooLong =&gt; <span class="string">"argument list too long"</span>,
@@ -1517,12 +1541,11 @@
             Deadlock =&gt; <span class="string">"deadlock"</span>,
             DirectoryNotEmpty =&gt; <span class="string">"directory not empty"</span>,
             ExecutableFileBusy =&gt; <span class="string">"executable file busy"</span>,
-            FileTooLarge =&gt; <span class="string">"file too large"</span>,
             FilesystemLoop =&gt; <span class="string">"filesystem loop or indirection limit (e.g. symlink loop)"</span>,
-            FilesystemQuotaExceeded =&gt; <span class="string">"filesystem quota exceeded"</span>,
+            FileTooLarge =&gt; <span class="string">"file too large"</span>,
             HostUnreachable =&gt; <span class="string">"host unreachable"</span>,
-            Interrupted =&gt; <span class="string">"operation interrupted"</span>,
             InProgress =&gt; <span class="string">"in progress"</span>,
+            Interrupted =&gt; <span class="string">"operation interrupted"</span>,
             InvalidData =&gt; <span class="string">"invalid data"</span>,
             InvalidFilename =&gt; <span class="string">"invalid filename"</span>,
             InvalidInput =&gt; <span class="string">"invalid input parameter"</span>,
@@ -1536,6 +1559,7 @@
             Other =&gt; <span class="string">"other error"</span>,
             OutOfMemory =&gt; <span class="string">"out of memory"</span>,
             PermissionDenied =&gt; <span class="string">"permission denied"</span>,
+            QuotaExceeded =&gt; <span class="string">"quota exceeded"</span>,
             ReadOnlyFilesystem =&gt; <span class="string">"read-only filesystem or storage medium"</span>,
             ResourceBusy =&gt; <span class="string">"resource busy"</span>,
             StaleNetworkFileHandle =&gt; <span class="string">"stale network file handle"</span>,
@@ -1547,9 +1571,9 @@
             Unsupported =&gt; <span class="string">"unsupported"</span>,
             WouldBlock =&gt; <span class="string">"operation would block"</span>,
             WriteZero =&gt; <span class="string">"write zero"</span>,
-        }
-        <span class="comment">// tidy-alphabetical-end
-    </span>}
+            <span class="comment">// tidy-alphabetical-end
+        </span>}
+    }
 }
 
 <span class="attr">#[stable(feature = <span class="string">"io_errorkind_display"</span>, since = <span class="string">"1.60.0"</span>)]
@@ -1660,13 +1684,15 @@
     ///
     /// This function does not allocate.
     ///
-    /// You should not use this directly, and instead use the `const_io_error!`
-    /// macro: `io::const_io_error!(ErrorKind::Something, "some_message")`.
+    /// You should not use this directly, and instead use the `const_error!`
+    /// macro: `io::const_error!(ErrorKind::Something, "some_message")`.
     ///
     /// This function should maybe change to `from_static_message&lt;const MSG: &amp;'static
     /// str&gt;(kind: ErrorKind)` in the future, when const generics allow that.
     </span><span class="attr">#[inline]
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const fn </span>from_static_message(msg: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>SimpleMessage) -&gt; Error {
+    #[doc(hidden)]
+    #[unstable(feature = <span class="string">"io_const_error_internals"</span>, issue = <span class="string">"none"</span>)]
+    </span><span class="kw">pub const fn </span>from_static_message(msg: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>SimpleMessage) -&gt; Error {
         <span class="self">Self </span>{ repr: Repr::new_simple_message(msg) }
     }
 

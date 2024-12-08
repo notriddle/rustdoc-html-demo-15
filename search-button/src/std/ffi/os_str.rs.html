@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/ffi/os_str.rs`."><title>os_str.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../static.files/storage-7f263dff.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.84.0.js"></script><script defer src="../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/ffi/</div>os_str.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/ffi/os_str.rs`."><title>os_str.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/ffi/</div>os_str.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -1768,7 +1768,11 @@
 <a href="#1767" id="1767">1767</a>
 <a href="#1768" id="1768">1768</a>
 <a href="#1769" id="1769">1769</a>
-<a href="#1770" id="1770">1770</a></pre></div><pre class="rust"><code><span class="doccomment">//! The [`OsStr`] and [`OsString`] types and associated utilities.
+<a href="#1770" id="1770">1770</a>
+<a href="#1771" id="1771">1771</a>
+<a href="#1772" id="1772">1772</a>
+<a href="#1773" id="1773">1773</a>
+<a href="#1774" id="1774">1774</a></pre></div><pre class="rust"><code><span class="doccomment">//! The [`OsStr`] and [`OsString`] types and associated utilities.
 
 </span><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -2320,11 +2324,15 @@
         OsStr::from_inner_mut(<span class="self">self</span>.inner.leak())
     }
 
-    <span class="doccomment">/// Provides plumbing to core `Vec::truncate`.
-    /// More well behaving alternative to allowing outer types
-    /// full mutable access to the core `Vec`.
+    <span class="doccomment">/// Truncate the the `OsString` to the specified length.
+    ///
+    /// # Panics
+    /// Panics if `len` does not lie on a valid `OsStr` boundary
+    /// (as described in [`OsStr::slice_encoded_bytes`]).
     </span><span class="attr">#[inline]
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>truncate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, len: usize) {
+    #[unstable(feature = <span class="string">"os_string_truncate"</span>, issue = <span class="string">"133262"</span>)]
+    </span><span class="kw">pub fn </span>truncate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, len: usize) {
+        <span class="self">self</span>.as_os_str().inner.check_public_boundary(len);
         <span class="self">self</span>.inner.truncate(len);
     }
 
@@ -2995,7 +3003,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"box_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"box_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>OsStr&gt; <span class="kw">for </span>Box&lt;OsStr&gt; {
     <span class="doccomment">/// Copies the string into a newly allocated &lt;code&gt;[Box]&amp;lt;[OsStr]&amp;gt;&lt;/code&gt;.
     </span><span class="attr">#[inline]
@@ -3075,7 +3083,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>OsStr&gt; <span class="kw">for </span>Arc&lt;OsStr&gt; {
     <span class="doccomment">/// Copies the string into a newly allocated &lt;code&gt;[Arc]&amp;lt;[OsStr]&amp;gt;&lt;/code&gt;.
     </span><span class="attr">#[inline]
@@ -3105,7 +3113,7 @@
     }
 }
 
-<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"CURRENT_RUSTC_VERSION"</span>)]
+<span class="attr">#[stable(feature = <span class="string">"shared_from_mut_slice"</span>, since = <span class="string">"1.84.0"</span>)]
 </span><span class="kw">impl </span>From&lt;<span class="kw-2">&amp;mut </span>OsStr&gt; <span class="kw">for </span>Rc&lt;OsStr&gt; {
     <span class="doccomment">/// Copies the string into a newly allocated &lt;code&gt;[Rc]&amp;lt;[OsStr]&amp;gt;&lt;/code&gt;.
     </span><span class="attr">#[inline]

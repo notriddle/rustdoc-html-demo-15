@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/thread/scoped.rs`."><title>scoped.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../static.files/storage-7f263dff.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.84.0.js"></script><script defer src="../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/thread/</div>scoped.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/thread/scoped.rs`."><title>scoped.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/thread/</div>scoped.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -346,7 +346,8 @@
 <a href="#345" id="345">345</a>
 <a href="#346" id="346">346</a>
 <a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a></pre></div><pre class="rust"><code><span class="kw">use super</span>::{Builder, JoinInner, <span class="prelude-ty">Result</span>, Thread, current, park};
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a></pre></div><pre class="rust"><code><span class="kw">use super</span>::{Builder, JoinInner, <span class="prelude-ty">Result</span>, Thread, current_or_unnamed};
 <span class="kw">use </span><span class="kw">crate</span>::marker::PhantomData;
 <span class="kw">use </span><span class="kw">crate</span>::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 <span class="kw">use </span><span class="kw">crate</span>::sync::Arc;
@@ -488,7 +489,7 @@
     </span><span class="kw">let </span>scope = Scope {
         data: Arc::new(ScopeData {
             num_running_threads: AtomicUsize::new(<span class="number">0</span>),
-            main_thread: current(),
+            main_thread: current_or_unnamed(),
             a_thread_panicked: AtomicBool::new(<span class="bool-val">false</span>),
         }),
         env: PhantomData,
@@ -500,7 +501,8 @@
 
     <span class="comment">// Wait until all the threads are finished.
     </span><span class="kw">while </span>scope.data.num_running_threads.load(Ordering::Acquire) != <span class="number">0 </span>{
-        park();
+        <span class="comment">// SAFETY: this is the main thread, the handle belongs to us.
+        </span><span class="kw">unsafe </span>{ scope.data.main_thread.park() };
     }
 
     <span class="comment">// Throw any panic from `f`, or the return value of `f` if no thread panicked.
@@ -524,7 +526,7 @@
     /// thread. If the spawned thread panics, [`join`] will return an [`Err`] containing
     /// the panic payload.
     ///
-    /// If the join handle is dropped, the spawned thread will implicitly joined at the
+    /// If the join handle is dropped, the spawned thread will be implicitly joined at the
     /// end of the scope. In that case, if the spawned thread panics, [`scope`] will
     /// panic after all threads are joined.
     ///

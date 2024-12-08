@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `std/src/collections/hash/map.rs`."><title>map.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-43a59efb.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.84.0" data-rustdoc-version="1.84.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-482ee6cc.js" ><script src="../../../../static.files/storage-7f263dff.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.84.0.js"></script><script defer src="../../../../static.files/main-ded76328.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/collections/hash/</div>map.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/collections/hash/map.rs`."><title>map.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.85.0.js"></script><script defer src="../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/collections/hash/</div>map.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -3319,7 +3319,29 @@
 <a href="#3318" id="3318">3318</a>
 <a href="#3319" id="3319">3319</a>
 <a href="#3320" id="3320">3320</a>
-<a href="#3321" id="3321">3321</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#3321" id="3321">3321</a>
+<a href="#3322" id="3322">3322</a>
+<a href="#3323" id="3323">3323</a>
+<a href="#3324" id="3324">3324</a>
+<a href="#3325" id="3325">3325</a>
+<a href="#3326" id="3326">3326</a>
+<a href="#3327" id="3327">3327</a>
+<a href="#3328" id="3328">3328</a>
+<a href="#3329" id="3329">3329</a>
+<a href="#3330" id="3330">3330</a>
+<a href="#3331" id="3331">3331</a>
+<a href="#3332" id="3332">3332</a>
+<a href="#3333" id="3333">3333</a>
+<a href="#3334" id="3334">3334</a>
+<a href="#3335" id="3335">3335</a>
+<a href="#3336" id="3336">3336</a>
+<a href="#3337" id="3337">3337</a>
+<a href="#3338" id="3338">3338</a>
+<a href="#3339" id="3339">3339</a>
+<a href="#3340" id="3340">3340</a>
+<a href="#3341" id="3341">3341</a>
+<a href="#3342" id="3342">3342</a>
+<a href="#3343" id="3343">3343</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
 <span class="kw">use </span>hashbrown::hash_map <span class="kw">as </span>base;
@@ -3525,6 +3547,25 @@
 ///     println!("{viking:?} has {health} hp");
 /// }
 /// ```
+///
+/// # Usage in `const` and `static`
+///
+/// As explained above, `HashMap` is randomly seeded: each `HashMap` instance uses a different seed,
+/// which means that `HashMap::new` cannot be used in const context. To construct a `HashMap` in the
+/// initializer of a `const` or `static` item, you will have to use a different hasher that does not
+/// involve a random seed, as demonstrated in the following example. **A `HashMap` constructed this
+/// way is not resistant against HashDoS!**
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use std::hash::{BuildHasherDefault, DefaultHasher};
+/// use std::sync::Mutex;
+///
+/// const EMPTY_MAP: HashMap&lt;String, Vec&lt;i32&gt;, BuildHasherDefault&lt;DefaultHasher&gt;&gt; =
+///     HashMap::with_hasher(BuildHasherDefault::new());
+/// static MAP: Mutex&lt;HashMap&lt;String, Vec&lt;i32&gt;, BuildHasherDefault&lt;DefaultHasher&gt;&gt;&gt; =
+///     Mutex::new(HashMap::with_hasher(BuildHasherDefault::new()));
+/// ```
 
 </span><span class="attr">#[cfg_attr(not(test), rustc_diagnostic_item = <span class="string">"HashMap"</span>)]
 #[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
@@ -3556,7 +3597,7 @@
     ///
     /// The hash map will be able to hold at least `capacity` elements without
     /// reallocating. This method is allowed to allocate for more elements than
-    /// `capacity`. If `capacity` is 0, the hash map will not allocate.
+    /// `capacity`. If `capacity` is zero, the hash map will not allocate.
     ///
     /// # Examples
     ///
@@ -3598,7 +3639,10 @@
     /// ```
     </span><span class="attr">#[inline]
     #[stable(feature = <span class="string">"hashmap_build_hasher"</span>, since = <span class="string">"1.7.0"</span>)]
-    #[rustc_const_unstable(feature = <span class="string">"const_collections_with_hasher"</span>, issue = <span class="string">"102575"</span>)]
+    #[rustc_const_stable(
+        feature = <span class="string">"const_collections_with_hasher"</span>,
+        since = <span class="string">"CURRENT_RUSTC_VERSION"
+    </span>)]
     </span><span class="kw">pub const fn </span>with_hasher(hash_builder: S) -&gt; HashMap&lt;K, V, S&gt; {
         HashMap { base: base::HashMap::with_hasher(hash_builder) }
     }
@@ -3608,7 +3652,7 @@
     ///
     /// The hash map will be able to hold at least `capacity` elements without
     /// reallocating. This method is allowed to allocate for more elements than
-    /// `capacity`. If `capacity` is 0, the hash map will not allocate.
+    /// `capacity`. If `capacity` is zero, the hash map will not allocate.
     ///
     /// Warning: `hasher` is normally randomly generated, and
     /// is designed to allow HashMaps to be resistant to attacks that
