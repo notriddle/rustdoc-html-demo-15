@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/io/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/io/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/io/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.86.0.js"></script><script defer src="../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/io/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -3245,7 +3245,12 @@
 <a href="#3244" id="3244">3244</a>
 <a href="#3245" id="3245">3245</a>
 <a href="#3246" id="3246">3246</a>
-<a href="#3247" id="3247">3247</a></pre></div><pre class="rust"><code><span class="doccomment">//! Traits, helpers, and type definitions for core I/O functionality.
+<a href="#3247" id="3247">3247</a>
+<a href="#3248" id="3248">3248</a>
+<a href="#3249" id="3249">3249</a>
+<a href="#3250" id="3250">3250</a>
+<a href="#3251" id="3251">3251</a>
+<a href="#3252" id="3252">3252</a></pre></div><pre class="rust"><code><span class="doccomment">//! Traits, helpers, and type definitions for core I/O functionality.
 //!
 //! The `std::io` module contains a number of common things you'll need
 //! when doing input and output. The most core part of this module is
@@ -4330,7 +4335,7 @@
     ///     let f = BufReader::new(File::open("foo.txt")?);
     ///
     ///     for byte in f.bytes() {
-    ///         println!("{}", byte.unwrap());
+    ///         println!("{}", byte?);
     ///     }
     ///     Ok(())
     /// }
@@ -5242,15 +5247,16 @@
     ///     .write(true)
     ///     .read(true)
     ///     .create(true)
-    ///     .open("foo.txt").unwrap();
+    ///     .open("foo.txt")?;
     ///
     /// let hello = "Hello!\n";
-    /// write!(f, "{hello}").unwrap();
-    /// f.rewind().unwrap();
+    /// write!(f, "{hello}")?;
+    /// f.rewind()?;
     ///
     /// let mut buf = String::new();
-    /// f.read_to_string(&amp;mut buf).unwrap();
+    /// f.read_to_string(&amp;mut buf)?;
     /// assert_eq!(&amp;buf, hello);
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"seek_rewind"</span>, since = <span class="string">"1.55.0"</span>)]
     </span><span class="kw">fn </span>rewind(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -5459,8 +5465,9 @@
 ///
 /// let stdin = io::stdin();
 /// for line in stdin.lock().lines() {
-///     println!("{}", line.unwrap());
+///     println!("{}", line?);
 /// }
+/// # std::io::Result::Ok(())
 /// ```
 ///
 /// If you have something that implements [`Read`], you can use the [`BufReader`
@@ -5483,7 +5490,8 @@
 ///     let f = BufReader::new(f);
 ///
 ///     for line in f.lines() {
-///         println!("{}", line.unwrap());
+///         let line = line?;
+///         println!("{line}");
 ///     }
 ///
 ///     Ok(())
@@ -5521,7 +5529,7 @@
     /// let stdin = io::stdin();
     /// let mut stdin = stdin.lock();
     ///
-    /// let buffer = stdin.fill_buf().unwrap();
+    /// let buffer = stdin.fill_buf()?;
     ///
     /// // work with buffer
     /// println!("{buffer:?}");
@@ -5529,6 +5537,7 @@
     /// // ensure the bytes we worked with aren't returned again later
     /// let length = buffer.len();
     /// stdin.consume(length);
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
     </span><span class="kw">fn </span>fill_buf(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[u8]&gt;;
@@ -5574,12 +5583,13 @@
     /// let stdin = io::stdin();
     /// let mut stdin = stdin.lock();
     ///
-    /// while stdin.has_data_left().unwrap() {
+    /// while stdin.has_data_left()? {
     ///     let mut line = String::new();
-    ///     stdin.read_line(&amp;mut line).unwrap();
+    ///     stdin.read_line(&amp;mut line)?;
     ///     // work with line
     ///     println!("{line:?}");
     /// }
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[unstable(feature = <span class="string">"buf_read_has_data_left"</span>, reason = <span class="string">"recently added"</span>, issue = <span class="string">"86423"</span>)]
     </span><span class="kw">fn </span>has_data_left(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {

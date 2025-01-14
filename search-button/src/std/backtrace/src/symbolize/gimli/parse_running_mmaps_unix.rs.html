@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/../../backtrace/src/symbolize/gimli/parse_running_mmaps_unix.rs`."><title>parse_running_mmaps_unix.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../../../" data-static-root-path="../../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../../src-files1.85.0.js"></script><script defer src="../../../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/backtrace/src/symbolize/gimli/</div>parse_running_mmaps_unix.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/../../backtrace/src/symbolize/gimli/parse_running_mmaps_unix.rs`."><title>parse_running_mmaps_unix.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../../../../" data-static-root-path="../../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../../src-files1.86.0.js"></script><script defer src="../../../../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/backtrace/src/symbolize/gimli/</div>parse_running_mmaps_unix.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -293,14 +293,25 @@
 <a href="#292" id="292">292</a>
 <a href="#293" id="293">293</a>
 <a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a></pre></div><pre class="rust"><code><span class="comment">// Note: This file is only currently used on targets that call out to the code
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a></pre></div><pre class="rust"><code><span class="comment">// Note: This file is only currently used on targets that call out to the code
 // in `mod libs_dl_iterate_phdr` (e.g. linux, freebsd, ...); it may be more
 // general purpose, but it hasn't been tested elsewhere.
 
-</span><span class="kw">use </span><span class="kw">super</span>::mystd::fs::File;
+</span><span class="kw">use </span><span class="kw">super</span>::mystd::ffi::OsString;
+<span class="kw">use </span><span class="kw">super</span>::mystd::fs::File;
 <span class="kw">use </span><span class="kw">super</span>::mystd::io::Read;
-<span class="kw">use </span><span class="kw">super</span>::mystd::str::FromStr;
-<span class="kw">use super</span>::{OsString, String, Vec};
+<span class="kw">use </span>alloc::string::String;
+<span class="kw">use </span>alloc::vec::Vec;
+<span class="kw">use </span>core::str::FromStr;
 
 <span class="attr">#[derive(PartialEq, Eq, Debug)]
 </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>MapsEntry {
@@ -315,7 +326,7 @@
     /// p = private (copy on write)
     </span>perms: [char; <span class="number">4</span>],
     <span class="doccomment">/// Offset into the file (or "whatever").
-    </span>offset: usize,
+    </span>offset: u64,
     <span class="doccomment">/// device (major, minor)
     </span>dev: (usize, usize),
     <span class="doccomment">/// inode on the device. 0 indicates that no inode is associated with the memory region (e.g. uninitalized data aka BSS).
@@ -371,6 +382,11 @@
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>ip_matches(<span class="kw-2">&amp;</span><span class="self">self</span>, ip: usize) -&gt; bool {
         <span class="self">self</span>.address.<span class="number">0 </span>&lt;= ip &amp;&amp; ip &lt; <span class="self">self</span>.address.<span class="number">1
     </span>}
+
+    <span class="attr">#[cfg(target_os = <span class="string">"android"</span>)]
+    </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>offset(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
+        <span class="self">self</span>.offset
+    }
 }
 
 <span class="kw">impl </span>FromStr <span class="kw">for </span>MapsEntry {
@@ -413,6 +429,8 @@
         </span><span class="kw">let </span>pathname_str = s.trim_start();
 
         <span class="kw">let </span>hex = |s| usize::from_str_radix(s, <span class="number">16</span>).map_err(|<span class="kw">_</span>| <span class="string">"Couldn't parse hex number"</span>);
+        <span class="kw">let </span>hex64 = |s| u64::from_str_radix(s, <span class="number">16</span>).map_err(|<span class="kw">_</span>| <span class="string">"Couldn't parse hex number"</span>);
+
         <span class="kw">let </span>address = <span class="kw">if let </span><span class="prelude-val">Some</span>((start, limit)) = range_str.split_once(<span class="string">'-'</span>) {
             (hex(start)<span class="question-mark">?</span>, hex(limit)<span class="question-mark">?</span>)
         } <span class="kw">else </span>{
@@ -427,7 +445,7 @@
             }
             perms
         };
-        <span class="kw">let </span>offset = hex(offset_str)<span class="question-mark">?</span>;
+        <span class="kw">let </span>offset = hex64(offset_str)<span class="question-mark">?</span>;
         <span class="kw">let </span>dev = <span class="kw">if let </span><span class="prelude-val">Some</span>((major, minor)) = dev_str.split_once(<span class="string">':'</span>) {
             (hex(major)<span class="question-mark">?</span>, hex(minor)<span class="question-mark">?</span>)
         } <span class="kw">else </span>{

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sys/pal/unix/fs.rs`."><title>fs.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../src-files1.85.0.js"></script><script defer src="../../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/pal/unix/</div>fs.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sys/pal/unix/fs.rs`."><title>fs.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../src-files1.86.0.js"></script><script defer src="../../../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sys/pal/unix/</div>fs.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -2279,7 +2279,34 @@
 <a href="#2278" id="2278">2278</a>
 <a href="#2279" id="2279">2279</a>
 <a href="#2280" id="2280">2280</a>
-<a href="#2281" id="2281">2281</a></pre></div><pre class="rust"><code><span class="comment">// miri has some special hacks here that make things unused.
+<a href="#2281" id="2281">2281</a>
+<a href="#2282" id="2282">2282</a>
+<a href="#2283" id="2283">2283</a>
+<a href="#2284" id="2284">2284</a>
+<a href="#2285" id="2285">2285</a>
+<a href="#2286" id="2286">2286</a>
+<a href="#2287" id="2287">2287</a>
+<a href="#2288" id="2288">2288</a>
+<a href="#2289" id="2289">2289</a>
+<a href="#2290" id="2290">2290</a>
+<a href="#2291" id="2291">2291</a>
+<a href="#2292" id="2292">2292</a>
+<a href="#2293" id="2293">2293</a>
+<a href="#2294" id="2294">2294</a>
+<a href="#2295" id="2295">2295</a>
+<a href="#2296" id="2296">2296</a>
+<a href="#2297" id="2297">2297</a>
+<a href="#2298" id="2298">2298</a>
+<a href="#2299" id="2299">2299</a>
+<a href="#2300" id="2300">2300</a>
+<a href="#2301" id="2301">2301</a>
+<a href="#2302" id="2302">2302</a>
+<a href="#2303" id="2303">2303</a>
+<a href="#2304" id="2304">2304</a>
+<a href="#2305" id="2305">2305</a>
+<a href="#2306" id="2306">2306</a>
+<a href="#2307" id="2307">2307</a>
+<a href="#2308" id="2308">2308</a></pre></div><pre class="rust"><code><span class="comment">// miri has some special hacks here that make things unused.
 </span><span class="attr">#![cfg_attr(miri, allow(unused))]
 
 #[cfg(test)]
@@ -2289,16 +2316,11 @@
 </span><span class="kw">use </span>libc::c_char;
 <span class="attr">#[cfg(any(
     all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-    target_os = <span class="string">"emscripten"</span>,
     target_os = <span class="string">"android"</span>,
     target_os = <span class="string">"hurd"
 </span>))]
 </span><span class="kw">use </span>libc::dirfd;
-<span class="attr">#[cfg(any(
-    all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-    target_os = <span class="string">"emscripten"</span>,
-    target_os = <span class="string">"hurd"
-</span>))]
+<span class="attr">#[cfg(any(all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)), target_os = <span class="string">"hurd"</span>))]
 </span><span class="kw">use </span>libc::fstatat64;
 <span class="attr">#[cfg(any(
     target_os = <span class="string">"android"</span>,
@@ -2315,7 +2337,6 @@
 <span class="attr">#[cfg(not(any(
     target_os = <span class="string">"android"</span>,
     target_os = <span class="string">"linux"</span>,
-    target_os = <span class="string">"emscripten"</span>,
     target_os = <span class="string">"solaris"</span>,
     target_os = <span class="string">"illumos"</span>,
     target_os = <span class="string">"l4re"</span>,
@@ -2329,7 +2350,7 @@
 </span><span class="kw">use </span>libc::readdir_r <span class="kw">as </span>readdir64_r;
 <span class="attr">#[cfg(any(all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)), target_os = <span class="string">"hurd"</span>))]
 </span><span class="kw">use </span>libc::readdir64;
-<span class="attr">#[cfg(any(target_os = <span class="string">"emscripten"</span>, target_os = <span class="string">"l4re"</span>))]
+<span class="attr">#[cfg(target_os = <span class="string">"l4re"</span>)]
 </span><span class="kw">use </span>libc::readdir64_r;
 <span class="kw">use </span>libc::{c_int, mode_t};
 <span class="attr">#[cfg(target_os = <span class="string">"android"</span>)]
@@ -2339,7 +2360,6 @@
 };
 <span class="attr">#[cfg(not(any(
     all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-    target_os = <span class="string">"emscripten"</span>,
     target_os = <span class="string">"l4re"</span>,
     target_os = <span class="string">"android"</span>,
     target_os = <span class="string">"hurd"</span>,
@@ -2350,7 +2370,6 @@
 };
 <span class="attr">#[cfg(any(
     all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-    target_os = <span class="string">"emscripten"</span>,
     target_os = <span class="string">"l4re"</span>,
     target_os = <span class="string">"hurd"
 </span>))]
@@ -2449,7 +2468,8 @@
             ) -&gt; c_int
         }
 
-        <span class="kw">if </span>STATX_SAVED_STATE.load(Ordering::Relaxed) == STATX_STATE::Unavailable <span class="kw">as </span>u8 {
+        <span class="kw">let </span>statx_availability = STATX_SAVED_STATE.load(Ordering::Relaxed);
+        <span class="kw">if </span>statx_availability == STATX_STATE::Unavailable <span class="kw">as </span>u8 {
             <span class="kw">return </span><span class="prelude-val">None</span>;
         }
 
@@ -2480,6 +2500,9 @@
                 STATX_SAVED_STATE.store(STATX_STATE::Unavailable <span class="kw">as </span>u8, Ordering::Relaxed);
                 <span class="kw">return </span><span class="prelude-val">None</span>;
             }
+        }
+        <span class="kw">if </span>statx_availability == STATX_STATE::Unknown <span class="kw">as </span>u8 {
+            STATX_SAVED_STATE.store(STATX_STATE::Present <span class="kw">as </span>u8, Ordering::Relaxed);
         }
 
         <span class="comment">// We cannot fill `stat64` exhaustively because of private padding fields.
@@ -3176,7 +3199,6 @@
     <span class="attr">#[cfg(all(
         any(
             all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-            target_os = <span class="string">"emscripten"</span>,
             target_os = <span class="string">"android"</span>,
             target_os = <span class="string">"hurd"
         </span>),
@@ -3205,7 +3227,6 @@
     <span class="attr">#[cfg(any(
         not(any(
             all(target_os = <span class="string">"linux"</span>, not(target_env = <span class="string">"musl"</span>)),
-            target_os = <span class="string">"emscripten"</span>,
             target_os = <span class="string">"android"</span>,
             target_os = <span class="string">"hurd"</span>,
         )),
@@ -4225,7 +4246,7 @@
 <span class="attr">#[cfg(target_os = <span class="string">"espidf"</span>)]
 </span><span class="kw">fn </span>open_to_and_set_permissions(
     to: <span class="kw-2">&amp;</span>Path,
-    _reader_metadata: <span class="kw">crate</span>::fs::Metadata,
+    _reader_metadata: <span class="kw-2">&amp;</span><span class="kw">crate</span>::fs::Metadata,
 ) -&gt; io::Result&lt;(<span class="kw">crate</span>::fs::File, <span class="kw">crate</span>::fs::Metadata)&gt; {
     <span class="kw">use </span><span class="kw">crate</span>::fs::OpenOptions;
     <span class="kw">let </span>writer = OpenOptions::new().open(to)<span class="question-mark">?</span>;
@@ -4236,7 +4257,7 @@
 <span class="attr">#[cfg(not(target_os = <span class="string">"espidf"</span>))]
 </span><span class="kw">fn </span>open_to_and_set_permissions(
     to: <span class="kw-2">&amp;</span>Path,
-    reader_metadata: <span class="kw">crate</span>::fs::Metadata,
+    reader_metadata: <span class="kw-2">&amp;</span><span class="kw">crate</span>::fs::Metadata,
 ) -&gt; io::Result&lt;(<span class="kw">crate</span>::fs::File, <span class="kw">crate</span>::fs::Metadata)&gt; {
     <span class="kw">use </span><span class="kw">crate</span>::fs::OpenOptions;
     <span class="kw">use </span><span class="kw">crate</span>::os::unix::fs::{OpenOptionsExt, PermissionsExt};
@@ -4261,30 +4282,63 @@
     <span class="prelude-val">Ok</span>((writer, writer_metadata))
 }
 
-<span class="attr">#[cfg(not(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>, target_vendor = <span class="string">"apple"</span>)))]
-</span><span class="kw">pub fn </span>copy(from: <span class="kw-2">&amp;</span>Path, to: <span class="kw-2">&amp;</span>Path) -&gt; io::Result&lt;u64&gt; {
-    <span class="kw">let </span>(<span class="kw-2">mut </span>reader, reader_metadata) = open_from(from)<span class="question-mark">?</span>;
-    <span class="kw">let </span>(<span class="kw-2">mut </span>writer, <span class="kw">_</span>) = open_to_and_set_permissions(to, reader_metadata)<span class="question-mark">?</span>;
+<span class="kw">mod </span>cfm {
+    <span class="kw">use </span><span class="kw">crate</span>::fs::{File, Metadata};
+    <span class="kw">use </span><span class="kw">crate</span>::io::{BorrowedCursor, IoSlice, IoSliceMut, Read, <span class="prelude-ty">Result</span>, Write};
 
-    io::copy(<span class="kw-2">&amp;mut </span>reader, <span class="kw-2">&amp;mut </span>writer)
-}
+    <span class="attr">#[allow(dead_code)]
+    </span><span class="kw">pub struct </span>CachedFileMetadata(<span class="kw">pub </span>File, <span class="kw">pub </span>Metadata);
 
-<span class="attr">#[cfg(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>))]
-</span><span class="kw">pub fn </span>copy(from: <span class="kw-2">&amp;</span>Path, to: <span class="kw-2">&amp;</span>Path) -&gt; io::Result&lt;u64&gt; {
-    <span class="kw">let </span>(<span class="kw-2">mut </span>reader, reader_metadata) = open_from(from)<span class="question-mark">?</span>;
-    <span class="kw">let </span>max_len = u64::MAX;
-    <span class="kw">let </span>(<span class="kw-2">mut </span>writer, <span class="kw">_</span>) = open_to_and_set_permissions(to, reader_metadata)<span class="question-mark">?</span>;
-
-    <span class="kw">use </span><span class="kw">super</span>::kernel_copy::{CopyResult, copy_regular_files};
-
-    <span class="kw">match </span>copy_regular_files(reader.as_raw_fd(), writer.as_raw_fd(), max_len) {
-        CopyResult::Ended(bytes) =&gt; <span class="prelude-val">Ok</span>(bytes),
-        CopyResult::Error(e, <span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(e),
-        CopyResult::Fallback(written) =&gt; <span class="kw">match </span>io::copy::generic_copy(<span class="kw-2">&amp;mut </span>reader, <span class="kw-2">&amp;mut </span>writer) {
-            <span class="prelude-val">Ok</span>(bytes) =&gt; <span class="prelude-val">Ok</span>(bytes + written),
-            <span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(e),
-        },
+    <span class="kw">impl </span>Read <span class="kw">for </span>CachedFileMetadata {
+        <span class="kw">fn </span>read(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.read(buf)
+        }
+        <span class="kw">fn </span>read_vectored(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bufs: <span class="kw-2">&amp;mut </span>[IoSliceMut&lt;<span class="lifetime">'_</span>&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.read_vectored(bufs)
+        }
+        <span class="kw">fn </span>read_buf(<span class="kw-2">&amp;mut </span><span class="self">self</span>, cursor: BorrowedCursor&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.read_buf(cursor)
+        }
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>is_read_vectored(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+            <span class="self">self</span>.<span class="number">0</span>.is_read_vectored()
+        }
+        <span class="kw">fn </span>read_to_end(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.read_to_end(buf)
+        }
+        <span class="kw">fn </span>read_to_string(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>String) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.read_to_string(buf)
+        }
     }
+    <span class="kw">impl </span>Write <span class="kw">for </span>CachedFileMetadata {
+        <span class="kw">fn </span>write(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.write(buf)
+        }
+        <span class="kw">fn </span>write_vectored(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bufs: <span class="kw-2">&amp;</span>[IoSlice&lt;<span class="lifetime">'_</span>&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.write_vectored(bufs)
+        }
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>is_write_vectored(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+            <span class="self">self</span>.<span class="number">0</span>.is_write_vectored()
+        }
+        <span class="attr">#[inline]
+        </span><span class="kw">fn </span>flush(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+            <span class="self">self</span>.<span class="number">0</span>.flush()
+        }
+    }
+}
+<span class="attr">#[cfg(any(target_os = <span class="string">"linux"</span>, target_os = <span class="string">"android"</span>))]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>cfm::CachedFileMetadata;
+
+<span class="attr">#[cfg(not(target_vendor = <span class="string">"apple"</span>))]
+</span><span class="kw">pub fn </span>copy(from: <span class="kw-2">&amp;</span>Path, to: <span class="kw-2">&amp;</span>Path) -&gt; io::Result&lt;u64&gt; {
+    <span class="kw">let </span>(reader, reader_metadata) = open_from(from)<span class="question-mark">?</span>;
+    <span class="kw">let </span>(writer, writer_metadata) = open_to_and_set_permissions(to, <span class="kw-2">&amp;</span>reader_metadata)<span class="question-mark">?</span>;
+
+    io::copy(
+        <span class="kw-2">&amp;mut </span>cfm::CachedFileMetadata(reader, reader_metadata),
+        <span class="kw-2">&amp;mut </span>cfm::CachedFileMetadata(writer, writer_metadata),
+    )
 }
 
 <span class="attr">#[cfg(target_vendor = <span class="string">"apple"</span>)]
@@ -4321,7 +4375,7 @@
     }
 
     <span class="comment">// Fall back to using `fcopyfile` if `fclonefileat` does not succeed.
-    </span><span class="kw">let </span>(writer, writer_metadata) = open_to_and_set_permissions(to, reader_metadata)<span class="question-mark">?</span>;
+    </span><span class="kw">let </span>(writer, writer_metadata) = open_to_and_set_permissions(to, <span class="kw-2">&amp;</span>reader_metadata)<span class="question-mark">?</span>;
 
     <span class="comment">// We ensure that `FreeOnDrop` never contains a null pointer so it is
     // always safe to call `copyfile_state_free`

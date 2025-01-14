@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/process.rs`."><title>process.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../static.files/storage-5ba24442.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.85.0.js"></script><script defer src="../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>process.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/process.rs`."><title>process.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../static.files/storage-5ba24442.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files1.86.0.js"></script><script defer src="../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/</div>process.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -2458,7 +2458,16 @@
 <a href="#2457" id="2457">2457</a>
 <a href="#2458" id="2458">2458</a>
 <a href="#2459" id="2459">2459</a>
-<a href="#2460" id="2460">2460</a></pre></div><pre class="rust"><code><span class="doccomment">//! A module for working with processes.
+<a href="#2460" id="2460">2460</a>
+<a href="#2461" id="2461">2461</a>
+<a href="#2462" id="2462">2462</a>
+<a href="#2463" id="2463">2463</a>
+<a href="#2464" id="2464">2464</a>
+<a href="#2465" id="2465">2465</a>
+<a href="#2466" id="2466">2466</a>
+<a href="#2467" id="2467">2467</a>
+<a href="#2468" id="2468">2468</a>
+<a href="#2469" id="2469">2469</a></pre></div><pre class="rust"><code><span class="doccomment">//! A module for working with processes.
 //!
 //! This module is mostly concerned with spawning and interacting with child
 //! processes, but it also provides [`abort`] and [`exit`] for terminating the
@@ -2684,7 +2693,7 @@
     /// has been captured. You might find it helpful to do
     ///
     /// ```ignore (incomplete)
-    /// let stdin = child.stdin.take().unwrap();
+    /// let stdin = child.stdin.take().expect("handle present");
     /// ```
     ///
     /// to avoid partially moving the `child` and thus blocking yourself from calling
@@ -2696,7 +2705,7 @@
     /// has been captured. You might find it helpful to do
     ///
     /// ```ignore (incomplete)
-    /// let stdout = child.stdout.take().unwrap();
+    /// let stdout = child.stdout.take().expect("handle present");
     /// ```
     ///
     /// to avoid partially moving the `child` and thus blocking yourself from calling
@@ -2708,7 +2717,7 @@
     /// has been captured. You might find it helpful to do
     ///
     /// ```ignore (incomplete)
-    /// let stderr = child.stderr.take().unwrap();
+    /// let stderr = child.stderr.take().expect("handle present");
     /// ```
     ///
     /// to avoid partially moving the `child` and thus blocking yourself from calling
@@ -3328,13 +3337,17 @@
     ///
     /// # Examples
     ///
+    /// Prevent any inherited `GIT_DIR` variable from changing the target of the `git` command,
+    /// while allowing all other variables, like `GIT_AUTHOR_NAME`.
+    ///
     /// ```no_run
     /// use std::process::Command;
     ///
-    /// Command::new("ls")
-    ///     .env_remove("PATH")
-    ///     .spawn()
-    ///     .expect("ls command failed to start");
+    /// Command::new("git")
+    ///     .arg("commit")
+    ///     .env_remove("GIT_DIR")
+    ///     .spawn()?;
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"process"</span>, since = <span class="string">"1.0.0"</span>)]
     </span><span class="kw">pub fn </span>env_remove&lt;K: AsRef&lt;OsStr&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, key: K) -&gt; <span class="kw-2">&amp;mut </span>Command {
@@ -3356,13 +3369,17 @@
     ///
     /// # Examples
     ///
+    /// The behavior of `sort` is affected by `LANG` and `LC_*` environment variables.
+    /// Clearing the environment makes `sort`'s behavior independent of the parent processes' language.
+    ///
     /// ```no_run
     /// use std::process::Command;
     ///
-    /// Command::new("ls")
+    /// Command::new("sort")
+    ///     .arg("file.txt")
     ///     .env_clear()
-    ///     .spawn()
-    ///     .expect("ls command failed to start");
+    ///     .spawn()?;
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"process"</span>, since = <span class="string">"1.0.0"</span>)]
     </span><span class="kw">pub fn </span>env_clear(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>Command {
@@ -3512,14 +3529,14 @@
     /// use std::io::{self, Write};
     /// let output = Command::new("/bin/cat")
     ///     .arg("file.txt")
-    ///     .output()
-    ///     .expect("failed to execute process");
+    ///     .output()?;
     ///
     /// println!("status: {}", output.status);
-    /// io::stdout().write_all(&amp;output.stdout).unwrap();
-    /// io::stderr().write_all(&amp;output.stderr).unwrap();
+    /// io::stdout().write_all(&amp;output.stdout)?;
+    /// io::stderr().write_all(&amp;output.stderr)?;
     ///
     /// assert!(output.status.success());
+    /// # io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"process"</span>, since = <span class="string">"1.0.0"</span>)]
     </span><span class="kw">pub fn </span>output(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; io::Result&lt;Output&gt; {
@@ -3743,13 +3760,13 @@
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">let </span>stdout_utf8 = str::from_utf8(<span class="kw-2">&amp;</span><span class="self">self</span>.stdout);
         <span class="kw">let </span>stdout_debug: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fmt::Debug = <span class="kw">match </span>stdout_utf8 {
-            <span class="prelude-val">Ok</span>(<span class="kw-2">ref </span>str) =&gt; str,
+            <span class="prelude-val">Ok</span>(<span class="kw-2">ref </span>s) =&gt; s,
             <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span><span class="self">self</span>.stdout,
         };
 
         <span class="kw">let </span>stderr_utf8 = str::from_utf8(<span class="kw-2">&amp;</span><span class="self">self</span>.stderr);
         <span class="kw">let </span>stderr_debug: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fmt::Debug = <span class="kw">match </span>stderr_utf8 {
-            <span class="prelude-val">Ok</span>(<span class="kw-2">ref </span>str) =&gt; str,
+            <span class="prelude-val">Ok</span>(<span class="kw-2">ref </span>s) =&gt; s,
             <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span><span class="self">self</span>.stderr,
         };
 
@@ -3851,11 +3868,11 @@
     /// let output = Command::new("rev")
     ///     .stdin(Stdio::inherit())
     ///     .stdout(Stdio::piped())
-    ///     .output()
-    ///     .expect("Failed to execute command");
+    ///     .output()?;
     ///
     /// print!("You piped in the reverse of: ");
-    /// io::stdout().write_all(&amp;output.stdout).unwrap();
+    /// io::stdout().write_all(&amp;output.stdout)?;
+    /// # io::Result::Ok(())
     /// ```
     </span><span class="attr">#[must_use]
     #[stable(feature = <span class="string">"process"</span>, since = <span class="string">"1.0.0"</span>)]
@@ -4035,14 +4052,14 @@
     /// use std::process::Command;
     ///
     /// // With the `foo.txt` file containing "Hello, world!"
-    /// let file = File::open("foo.txt").unwrap();
+    /// let file = File::open("foo.txt")?;
     ///
     /// let reverse = Command::new("rev")
     ///     .stdin(file)  // Implicit File conversion into a Stdio
-    ///     .output()
-    ///     .expect("failed reverse command");
+    ///     .output()?;
     ///
     /// assert_eq!(reverse.stdout, b"!dlrow ,olleH");
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="kw">fn </span>from(file: fs::File) -&gt; Stdio {
         Stdio::from_inner(file.into_inner().into())
@@ -4639,7 +4656,7 @@
     /// ```no_run
     /// use std::process::Command;
     ///
-    /// let mut child = Command::new("ls").spawn().unwrap();
+    /// let mut child = Command::new("ls").spawn()?;
     ///
     /// match child.try_wait() {
     ///     Ok(Some(status)) =&gt; println!("exited with: {status}"),
@@ -4650,6 +4667,7 @@
     ///     }
     ///     Err(e) =&gt; println!("error attempting to wait: {e}"),
     /// }
+    /// # std::io::Result::Ok(())
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"process_try_wait"</span>, since = <span class="string">"1.18.0"</span>)]
     </span><span class="kw">pub fn </span>try_wait(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; io::Result&lt;<span class="prelude-ty">Option</span>&lt;ExitStatus&gt;&gt; {

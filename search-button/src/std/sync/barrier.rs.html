@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sync/barrier.rs`."><title>barrier.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sync/</div>barrier.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sync/barrier.rs`."><title>barrier.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.86.0.js"></script><script defer src="../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sync/</div>barrier.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -166,18 +166,12 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
-<a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#168" id="168">168</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
 <span class="kw">use </span><span class="kw">crate</span>::fmt;
-<span class="kw">use </span><span class="kw">crate</span>::sync::{Condvar, Mutex};
+<span class="comment">// FIXME(nonpoison_mutex,nonpoison_condvar): switch to nonpoison versions once they are available
+</span><span class="kw">use </span><span class="kw">crate</span>::sync::{Condvar, Mutex};
 
 <span class="doccomment">/// A barrier enables multiple threads to synchronize the beginning
 /// of some computation.
@@ -185,26 +179,22 @@
 /// # Examples
 ///
 /// ```
-/// use std::sync::{Arc, Barrier};
+/// use std::sync::Barrier;
 /// use std::thread;
 ///
 /// let n = 10;
-/// let mut handles = Vec::with_capacity(n);
-/// let barrier = Arc::new(Barrier::new(n));
-/// for _ in 0..n {
-///     let c = Arc::clone(&amp;barrier);
-///     // The same messages will be printed together.
-///     // You will NOT see any interleaving.
-///     handles.push(thread::spawn(move || {
-///         println!("before wait");
-///         c.wait();
-///         println!("after wait");
-///     }));
-/// }
-/// // Wait for other threads to finish.
-/// for handle in handles {
-///     handle.join().unwrap();
-/// }
+/// let barrier = Barrier::new(n);
+/// thread::scope(|s| {
+///     for _ in 0..n {
+///         // The same messages will be printed together.
+///         // You will NOT see any interleaving.
+///         s.spawn(|| {
+///             println!("before wait");
+///             barrier.wait();
+///             println!("after wait");
+///         });
+///     }
+/// });
 /// ```
 </span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
 </span><span class="kw">pub struct </span>Barrier {
@@ -280,26 +270,22 @@
     /// # Examples
     ///
     /// ```
-    /// use std::sync::{Arc, Barrier};
+    /// use std::sync::Barrier;
     /// use std::thread;
     ///
     /// let n = 10;
-    /// let mut handles = Vec::with_capacity(n);
-    /// let barrier = Arc::new(Barrier::new(n));
-    /// for _ in 0..n {
-    ///     let c = Arc::clone(&amp;barrier);
-    ///     // The same messages will be printed together.
-    ///     // You will NOT see any interleaving.
-    ///     handles.push(thread::spawn(move || {
-    ///         println!("before wait");
-    ///         c.wait();
-    ///         println!("after wait");
-    ///     }));
-    /// }
-    /// // Wait for other threads to finish.
-    /// for handle in handles {
-    ///     handle.join().unwrap();
-    /// }
+    /// let barrier = Barrier::new(n);
+    /// thread::scope(|s| {
+    ///     for _ in 0..n {
+    ///         // The same messages will be printed together.
+    ///         // You will NOT see any interleaving.
+    ///         s.spawn(|| {
+    ///             println!("before wait");
+    ///             barrier.wait();
+    ///             println!("after wait");
+    ///         });
+    ///     }
+    /// });
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
     </span><span class="kw">pub fn </span>wait(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BarrierWaitResult {

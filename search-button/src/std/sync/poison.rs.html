@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sync/poison.rs`."><title>poison.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.85.0.js"></script><script defer src="../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sync/</div>poison.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/sync/poison.rs`."><title>poison.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../static.files/storage-5ba24442.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files1.86.0.js"></script><script defer src="../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/sync/</div>poison.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -325,14 +325,177 @@
 <a href="#324" id="324">324</a>
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::error::Error;
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a></pre></div><pre class="rust"><code><span class="doccomment">//! Synchronization objects that employ poisoning.
+//!
+//! # Poisoning
+//!
+//! All synchronization objects in this module implement a strategy called "poisoning"
+//! where if a thread panics while holding the exclusive access granted by the primitive,
+//! the state of the primitive is set to "poisoned".
+//! This information is then propagated to all other threads
+//! to signify that the data protected by this primitive is likely tainted
+//! (some invariant is not being upheld).
+//!
+//! The specifics of how this "poisoned" state affects other threads
+//! depend on the primitive. See [#Overview] bellow.
+//!
+//! For the alternative implementations that do not employ poisoning,
+//! see `std::sys::nonpoisoning`.
+//!
+//! # Overview
+//!
+//! Below is a list of synchronization objects provided by this module
+//! with a high-level overview for each object and a description
+//! of how it employs "poisoning".
+//!
+//! - [`Condvar`]: Condition Variable, providing the ability to block
+//!   a thread while waiting for an event to occur.
+//!
+//!   Condition variables are typically associated with
+//!   a boolean predicate (a condition) and a mutex.
+//!   This implementation is associated with [`poison::Mutex`](Mutex),
+//!   which employs poisoning.
+//!   For this reason, [`Condvar::wait()`] will return a [`LockResult`],
+//!   just like [`poison::Mutex::lock()`](Mutex::lock) does.
+//!
+//! - [`Mutex`]: Mutual Exclusion mechanism, which ensures that at
+//!   most one thread at a time is able to access some data.
+//!
+//!   [`Mutex::lock()`] returns a [`LockResult`],
+//!   providing a way to deal with the poisoned state.
+//!   See [`Mutex`'s documentation](Mutex#poisoning) for more.
+//!
+//! - [`Once`]: A thread-safe way to run a piece of code only once.
+//!   Mostly useful for implementing one-time global initialization.
+//!
+//!   [`Once`] is poisoned if the piece of code passed to
+//!   [`Once::call_once()`] or [`Once::call_once_force()`] panics.
+//!   When in poisoned state, subsequent calls to [`Once::call_once()`] will panic too.
+//!   [`Once::call_once_force()`] can be used to clear the poisoned state.
+//!
+//! - [`RwLock`]: Provides a mutual exclusion mechanism which allows
+//!   multiple readers at the same time, while allowing only one
+//!   writer at a time. In some cases, this can be more efficient than
+//!   a mutex.
+//!
+//!   This implementation, like [`Mutex`], will become poisoned on a panic.
+//!   Note, however, that an `RwLock` may only be poisoned if a panic occurs
+//!   while it is locked exclusively (write mode). If a panic occurs in any reader,
+//!   then the lock will not be poisoned.
+
+</span><span class="comment">// FIXME(sync_nonpoison) add links to sync::nonpoison to the doc comment above.
+
+</span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::condvar::{Condvar, WaitTimeoutResult};
+<span class="attr">#[unstable(feature = <span class="string">"mapped_lock_guards"</span>, issue = <span class="string">"117108"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::mutex::MappedMutexGuard;
+<span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::mutex::{Mutex, MutexGuard};
+<span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+#[expect(deprecated)]
+</span><span class="kw">pub use </span><span class="self">self</span>::once::ONCE_INIT;
+<span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::once::{Once, OnceState};
+<span class="attr">#[unstable(feature = <span class="string">"mapped_lock_guards"</span>, issue = <span class="string">"117108"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::rwlock::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
+<span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::rwlock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+<span class="kw">use </span><span class="kw">crate</span>::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::fmt;
 <span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::sync::atomic::{AtomicBool, Ordering};
 <span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::thread;
 
-<span class="kw">pub struct </span>Flag {
+<span class="kw">mod </span>condvar;
+<span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
+</span><span class="kw">mod </span>mutex;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>once;
+<span class="kw">mod </span>rwlock;
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Flag {
     <span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
     </span>failed: AtomicBool,
 }
@@ -405,7 +568,7 @@
 }
 
 <span class="attr">#[derive(Clone)]
-</span><span class="kw">pub struct </span>Guard {
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Guard {
     <span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
     </span>panicking: bool,
 }
@@ -414,8 +577,8 @@
 ///
 /// Both [`Mutex`]es and [`RwLock`]s are poisoned whenever a thread fails while the lock
 /// is held. The precise semantics for when a lock is poisoned is documented on
-/// each lock, but once a lock is poisoned then all future acquisitions will
-/// return this error.
+/// each lock. For a lock in the poisoned state, unless the state is cleared manually,
+/// all future acquisitions will return this error.
 ///
 /// # Examples
 ///
@@ -445,7 +608,7 @@
 /// [`RwLock`]: crate::sync::RwLock
 </span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
 </span><span class="kw">pub struct </span>PoisonError&lt;T&gt; {
-    guard: T,
+    data: T,
     <span class="attr">#[cfg(not(panic = <span class="string">"unwind"</span>))]
     </span>_never: !,
 }
@@ -474,14 +637,15 @@
 <span class="doccomment">/// A type alias for the result of a lock method which can be poisoned.
 ///
 /// The [`Ok`] variant of this result indicates that the primitive was not
-/// poisoned, and the `Guard` is contained within. The [`Err`] variant indicates
+/// poisoned, and the operation result is contained within. The [`Err`] variant indicates
 /// that the primitive was poisoned. Note that the [`Err`] variant *also* carries
-/// the associated guard, and it can be acquired through the [`into_inner`]
-/// method.
+/// an associated value assigned by the lock method, and it can be acquired through the
+/// [`into_inner`] method. The semantics of the associated value depends on the corresponding
+/// lock method.
 ///
 /// [`into_inner`]: PoisonError::into_inner
 </span><span class="attr">#[stable(feature = <span class="string">"rust1"</span>, since = <span class="string">"1.0.0"</span>)]
-</span><span class="kw">pub type </span>LockResult&lt;Guard&gt; = <span class="prelude-ty">Result</span>&lt;Guard, PoisonError&lt;Guard&gt;&gt;;
+</span><span class="kw">pub type </span>LockResult&lt;T&gt; = <span class="prelude-ty">Result</span>&lt;T, PoisonError&lt;T&gt;&gt;;
 
 <span class="doccomment">/// A type alias for the result of a nonblocking locking method.
 ///
@@ -522,8 +686,8 @@
     /// This method may panic if std was built with `panic="abort"`.
     </span><span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
     #[stable(feature = <span class="string">"sync_poison"</span>, since = <span class="string">"1.2.0"</span>)]
-    </span><span class="kw">pub fn </span>new(guard: T) -&gt; PoisonError&lt;T&gt; {
-        PoisonError { guard }
+    </span><span class="kw">pub fn </span>new(data: T) -&gt; PoisonError&lt;T&gt; {
+        PoisonError { data }
     }
 
     <span class="doccomment">/// Creates a `PoisonError`.
@@ -535,12 +699,12 @@
     </span><span class="attr">#[cfg(not(panic = <span class="string">"unwind"</span>))]
     #[stable(feature = <span class="string">"sync_poison"</span>, since = <span class="string">"1.2.0"</span>)]
     #[track_caller]
-    </span><span class="kw">pub fn </span>new(_guard: T) -&gt; PoisonError&lt;T&gt; {
+    </span><span class="kw">pub fn </span>new(_data: T) -&gt; PoisonError&lt;T&gt; {
         <span class="macro">panic!</span>(<span class="string">"PoisonError created in a libstd built with panic=\"abort\""</span>)
     }
 
     <span class="doccomment">/// Consumes this error indicating that a lock is poisoned, returning the
-    /// underlying guard to allow access regardless.
+    /// associated data.
     ///
     /// # Examples
     ///
@@ -565,21 +729,21 @@
     /// ```
     </span><span class="attr">#[stable(feature = <span class="string">"sync_poison"</span>, since = <span class="string">"1.2.0"</span>)]
     </span><span class="kw">pub fn </span>into_inner(<span class="self">self</span>) -&gt; T {
-        <span class="self">self</span>.guard
+        <span class="self">self</span>.data
     }
 
     <span class="doccomment">/// Reaches into this error indicating that a lock is poisoned, returning a
-    /// reference to the underlying guard to allow access regardless.
+    /// reference to the associated data.
     </span><span class="attr">#[stable(feature = <span class="string">"sync_poison"</span>, since = <span class="string">"1.2.0"</span>)]
     </span><span class="kw">pub fn </span>get_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.guard
+        <span class="kw-2">&amp;</span><span class="self">self</span>.data
     }
 
     <span class="doccomment">/// Reaches into this error indicating that a lock is poisoned, returning a
-    /// mutable reference to the underlying guard to allow access regardless.
+    /// mutable reference to the associated data.
     </span><span class="attr">#[stable(feature = <span class="string">"sync_poison"</span>, since = <span class="string">"1.2.0"</span>)]
     </span><span class="kw">pub fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>T {
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>.guard
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>.data
     }
 }
 
@@ -642,14 +806,14 @@
     }
 }
 
-<span class="kw">pub fn </span>map_result&lt;T, U, F&gt;(result: LockResult&lt;T&gt;, f: F) -&gt; LockResult&lt;U&gt;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>map_result&lt;T, U, F&gt;(result: LockResult&lt;T&gt;, f: F) -&gt; LockResult&lt;U&gt;
 <span class="kw">where
     </span>F: FnOnce(T) -&gt; U,
 {
     <span class="kw">match </span>result {
         <span class="prelude-val">Ok</span>(t) =&gt; <span class="prelude-val">Ok</span>(f(t)),
         <span class="attr">#[cfg(panic = <span class="string">"unwind"</span>)]
-        </span><span class="prelude-val">Err</span>(PoisonError { guard }) =&gt; <span class="prelude-val">Err</span>(PoisonError::new(f(guard))),
+        </span><span class="prelude-val">Err</span>(PoisonError { data }) =&gt; <span class="prelude-val">Err</span>(PoisonError::new(f(data))),
     }
 }
 </code></pre></div></section></main></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/os/fd/owned.rs`."><title>owned.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.85.0.js"></script><script defer src="../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/os/fd/</div>owned.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/os/fd/owned.rs`."><title>owned.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files1.86.0.js"></script><script defer src="../../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/os/fd/</div>owned.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -486,7 +486,9 @@
 <a href="#485" id="485">485</a>
 <a href="#486" id="486">486</a>
 <a href="#487" id="487">487</a>
-<a href="#488" id="488">488</a></pre></div><pre class="rust"><code><span class="doccomment">//! Owned and borrowed Unix-like file descriptors.
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a></pre></div><pre class="rust"><code><span class="doccomment">//! Owned and borrowed Unix-like file descriptors.
 
 </span><span class="attr">#![stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 #![deny(unsafe_op_in_unsafe_fn)]
@@ -498,6 +500,8 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::sys::cvt;
 <span class="kw">use </span><span class="kw">crate</span>::sys_common::{AsInner, FromInner, IntoInner};
 <span class="kw">use crate</span>::{fmt, fs, io};
+
+<span class="kw">type </span>ValidRawFd = core::num::niche_types::NotAllOnes&lt;RawFd&gt;;
 
 <span class="doccomment">/// A borrowed file descriptor.
 ///
@@ -520,15 +524,10 @@
 /// instead, but this is not supported on all platforms.
 </span><span class="attr">#[derive(Copy, Clone)]
 #[repr(transparent)]
-#[rustc_layout_scalar_valid_range_start(<span class="number">0</span>)]
-</span><span class="comment">// libstd/os/raw/mod.rs assures me that every libstd-supported platform has a
-// 32-bit c_int. Below is -2, in two's complement, but that only works out
-// because c_int is 32 bits.
-</span><span class="attr">#[rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FE</span>)]
 #[rustc_nonnull_optimization_guaranteed]
 #[stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 </span><span class="kw">pub struct </span>BorrowedFd&lt;<span class="lifetime">'fd</span>&gt; {
-    fd: RawFd,
+    fd: ValidRawFd,
     _phantom: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'fd </span>OwnedFd&gt;,
 }
 
@@ -544,15 +543,10 @@
 ///
 /// You can use [`AsFd::as_fd`] to obtain a [`BorrowedFd`].
 </span><span class="attr">#[repr(transparent)]
-#[rustc_layout_scalar_valid_range_start(<span class="number">0</span>)]
-</span><span class="comment">// libstd/os/raw/mod.rs assures me that every libstd-supported platform has a
-// 32-bit c_int. Below is -2, in two's complement, but that only works out
-// because c_int is 32 bits.
-</span><span class="attr">#[rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FE</span>)]
 #[rustc_nonnull_optimization_guaranteed]
 #[stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 </span><span class="kw">pub struct </span>OwnedFd {
-    fd: RawFd,
+    fd: ValidRawFd,
 }
 
 <span class="kw">impl </span>BorrowedFd&lt;<span class="lifetime">'_</span>&gt; {
@@ -568,7 +562,8 @@
     </span><span class="kw">pub const unsafe fn </span>borrow_raw(fd: RawFd) -&gt; <span class="self">Self </span>{
         <span class="macro">assert!</span>(fd != u32::MAX <span class="kw">as </span>RawFd);
         <span class="comment">// SAFETY: we just asserted that the value is in the valid range and isn't `-1` (the only value bigger than `0xFF_FF_FF_FE` unsigned)
-        </span><span class="kw">unsafe </span>{ <span class="self">Self </span>{ fd, _phantom: PhantomData } }
+        </span><span class="kw">let </span>fd = <span class="kw">unsafe </span>{ ValidRawFd::new_unchecked(fd) };
+        <span class="self">Self </span>{ fd, _phantom: PhantomData }
     }
 }
 
@@ -618,7 +613,7 @@
 </span><span class="kw">impl </span>AsRawFd <span class="kw">for </span>BorrowedFd&lt;<span class="lifetime">'_</span>&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_raw_fd(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawFd {
-        <span class="self">self</span>.fd
+        <span class="self">self</span>.fd.as_inner()
     }
 }
 
@@ -626,7 +621,7 @@
 </span><span class="kw">impl </span>AsRawFd <span class="kw">for </span>OwnedFd {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_raw_fd(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawFd {
-        <span class="self">self</span>.fd
+        <span class="self">self</span>.fd.as_inner()
     }
 }
 
@@ -634,7 +629,7 @@
 </span><span class="kw">impl </span>IntoRawFd <span class="kw">for </span>OwnedFd {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>into_raw_fd(<span class="self">self</span>) -&gt; RawFd {
-        ManuallyDrop::new(<span class="self">self</span>).fd
+        ManuallyDrop::new(<span class="self">self</span>).fd.as_inner()
     }
 }
 
@@ -652,7 +647,8 @@
     </span><span class="kw">unsafe fn </span>from_raw_fd(fd: RawFd) -&gt; <span class="self">Self </span>{
         <span class="macro">assert_ne!</span>(fd, u32::MAX <span class="kw">as </span>RawFd);
         <span class="comment">// SAFETY: we just asserted that the value is in the valid range and isn't `-1` (the only value bigger than `0xFF_FF_FF_FE` unsigned)
-        </span><span class="kw">unsafe </span>{ <span class="self">Self </span>{ fd } }
+        </span><span class="kw">let </span>fd = <span class="kw">unsafe </span>{ ValidRawFd::new_unchecked(fd) };
+        <span class="self">Self </span>{ fd }
     }
 }
 
@@ -675,12 +671,12 @@
             </span><span class="attr">#[cfg(not(target_os = <span class="string">"hermit"</span>))]
             </span>{
                 <span class="attr">#[cfg(unix)]
-                </span><span class="kw">crate</span>::sys::fs::debug_assert_fd_is_open(<span class="self">self</span>.fd);
+                </span><span class="kw">crate</span>::sys::fs::debug_assert_fd_is_open(<span class="self">self</span>.fd.as_inner());
 
-                <span class="kw">let _ </span>= libc::close(<span class="self">self</span>.fd);
+                <span class="kw">let _ </span>= libc::close(<span class="self">self</span>.fd.as_inner());
             }
             <span class="attr">#[cfg(target_os = <span class="string">"hermit"</span>)]
-            </span><span class="kw">let _ </span>= hermit_abi::close(<span class="self">self</span>.fd);
+            </span><span class="kw">let _ </span>= hermit_abi::close(<span class="self">self</span>.fd.as_inner());
         }
     }
 }
@@ -910,6 +906,14 @@
 
 <span class="attr">#[stable(feature = <span class="string">"asfd_rc"</span>, since = <span class="string">"1.69.0"</span>)]
 </span><span class="kw">impl</span>&lt;T: AsFd + <span class="question-mark">?</span>Sized&gt; AsFd <span class="kw">for </span><span class="kw">crate</span>::rc::Rc&lt;T&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_fd(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BorrowedFd&lt;<span class="lifetime">'_</span>&gt; {
+        (<span class="kw-2">**</span><span class="self">self</span>).as_fd()
+    }
+}
+
+<span class="attr">#[unstable(feature = <span class="string">"unique_rc_arc"</span>, issue = <span class="string">"112566"</span>)]
+</span><span class="kw">impl</span>&lt;T: AsFd + <span class="question-mark">?</span>Sized&gt; AsFd <span class="kw">for </span><span class="kw">crate</span>::rc::UniqueRc&lt;T&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_fd(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BorrowedFd&lt;<span class="lifetime">'_</span>&gt; {
         (<span class="kw-2">**</span><span class="self">self</span>).as_fd()

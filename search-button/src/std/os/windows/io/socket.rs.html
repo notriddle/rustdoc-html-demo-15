@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/os/windows/io/socket.rs`."><title>socket.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-d9a4c3a9.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.85.0" data-rustdoc-version="1.85.0-dev" data-channel="nightly" data-search-js="search-dbc0e926.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../src-files1.85.0.js"></script><script defer src="../../../../../static.files/main-2b69814b.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/os/windows/io/</div>socket.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `library/std/src/os/windows/io/socket.rs`."><title>socket.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-c0d7d43c.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="std" data-themes="" data-resource-suffix="1.86.0" data-rustdoc-version="1.86.0-dev" data-channel="nightly" data-search-js="search-aff8c98a.js" data-settings-js="settings-097ce0b1.js" ><script src="../../../../../static.files/storage-5ba24442.js"></script><script defer src="../../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../../src-files1.86.0.js"></script><script defer src="../../../../../static.files/main-4b22b095.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">std/os/windows/io/</div>socket.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -377,10 +377,7 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a></pre></div><pre class="rust"><code><span class="doccomment">//! Owned and borrowed OS sockets.
+<a href="#379" id="379">379</a></pre></div><pre class="rust"><code><span class="doccomment">//! Owned and borrowed OS sockets.
 
 </span><span class="attr">#![stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 
@@ -390,6 +387,9 @@
 <span class="attr">#[cfg(not(target_vendor = <span class="string">"uwp"</span>))]
 </span><span class="kw">use </span><span class="kw">crate</span>::sys::cvt;
 <span class="kw">use crate</span>::{fmt, io, sys};
+
+<span class="comment">// The max here is -2, in two's complement. -1 is `INVALID_SOCKET`.
+</span><span class="kw">type </span>ValidRawSocket = core::num::niche_types::NotAllOnes&lt;RawSocket&gt;;
 
 <span class="doccomment">/// A borrowed socket.
 ///
@@ -406,17 +406,10 @@
 /// socket, which is then borrowed under the same lifetime.
 </span><span class="attr">#[derive(Copy, Clone)]
 #[repr(transparent)]
-#[rustc_layout_scalar_valid_range_start(<span class="number">0</span>)]
-</span><span class="comment">// This is -2, in two's complement. -1 is `INVALID_SOCKET`.
-</span><span class="attr">#[cfg_attr(target_pointer_width = <span class="string">"32"</span>, rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FE</span>))]
-#[cfg_attr(
-    target_pointer_width = <span class="string">"64"</span>,
-    rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FF_FF_FF_FF_FE</span>)
-)]
 #[rustc_nonnull_optimization_guaranteed]
 #[stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 </span><span class="kw">pub struct </span>BorrowedSocket&lt;<span class="lifetime">'socket</span>&gt; {
-    socket: RawSocket,
+    socket: ValidRawSocket,
     _phantom: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'socket </span>OwnedSocket&gt;,
 }
 
@@ -429,17 +422,10 @@
 /// argument or returned as an owned value, and it never has the value
 /// `INVALID_SOCKET`.
 </span><span class="attr">#[repr(transparent)]
-#[rustc_layout_scalar_valid_range_start(<span class="number">0</span>)]
-</span><span class="comment">// This is -2, in two's complement. -1 is `INVALID_SOCKET`.
-</span><span class="attr">#[cfg_attr(target_pointer_width = <span class="string">"32"</span>, rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FE</span>))]
-#[cfg_attr(
-    target_pointer_width = <span class="string">"64"</span>,
-    rustc_layout_scalar_valid_range_end(<span class="number">0xFF_FF_FF_FF_FF_FF_FF_FE</span>)
-)]
 #[rustc_nonnull_optimization_guaranteed]
 #[stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
 </span><span class="kw">pub struct </span>OwnedSocket {
-    socket: RawSocket,
+    socket: ValidRawSocket,
 }
 
 <span class="kw">impl </span>BorrowedSocket&lt;<span class="lifetime">'_</span>&gt; {
@@ -455,7 +441,8 @@
     #[stable(feature = <span class="string">"io_safety"</span>, since = <span class="string">"1.63.0"</span>)]
     </span><span class="kw">pub const unsafe fn </span>borrow_raw(socket: RawSocket) -&gt; <span class="self">Self </span>{
         <span class="macro">assert!</span>(socket != sys::c::INVALID_SOCKET <span class="kw">as </span>RawSocket);
-        <span class="kw">unsafe </span>{ <span class="self">Self </span>{ socket, _phantom: PhantomData } }
+        <span class="kw">let </span>socket = <span class="kw">unsafe </span>{ ValidRawSocket::new_unchecked(socket) };
+        <span class="self">Self </span>{ socket, _phantom: PhantomData }
     }
 }
 
@@ -554,7 +541,7 @@
 </span><span class="kw">impl </span>AsRawSocket <span class="kw">for </span>BorrowedSocket&lt;<span class="lifetime">'_</span>&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_raw_socket(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawSocket {
-        <span class="self">self</span>.socket
+        <span class="self">self</span>.socket.as_inner()
     }
 }
 
@@ -562,7 +549,7 @@
 </span><span class="kw">impl </span>AsRawSocket <span class="kw">for </span>OwnedSocket {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_raw_socket(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawSocket {
-        <span class="self">self</span>.socket
+        <span class="self">self</span>.socket.as_inner()
     }
 }
 
@@ -570,7 +557,7 @@
 </span><span class="kw">impl </span>IntoRawSocket <span class="kw">for </span>OwnedSocket {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>into_raw_socket(<span class="self">self</span>) -&gt; RawSocket {
-        ManuallyDrop::new(<span class="self">self</span>).socket
+        ManuallyDrop::new(<span class="self">self</span>).socket.as_inner()
     }
 }
 
@@ -578,10 +565,9 @@
 </span><span class="kw">impl </span>FromRawSocket <span class="kw">for </span>OwnedSocket {
     <span class="attr">#[inline]
     </span><span class="kw">unsafe fn </span>from_raw_socket(socket: RawSocket) -&gt; <span class="self">Self </span>{
-        <span class="kw">unsafe </span>{
-            <span class="macro">debug_assert_ne!</span>(socket, sys::c::INVALID_SOCKET <span class="kw">as </span>RawSocket);
-            <span class="self">Self </span>{ socket }
-        }
+        <span class="macro">debug_assert_ne!</span>(socket, sys::c::INVALID_SOCKET <span class="kw">as </span>RawSocket);
+        <span class="kw">let </span>socket = <span class="kw">unsafe </span>{ ValidRawSocket::new_unchecked(socket) };
+        <span class="self">Self </span>{ socket }
     }
 }
 
@@ -590,7 +576,7 @@
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">unsafe </span>{
-            <span class="kw">let _ </span>= sys::c::closesocket(<span class="self">self</span>.socket <span class="kw">as </span>sys::c::SOCKET);
+            <span class="kw">let _ </span>= sys::c::closesocket(<span class="self">self</span>.socket.as_inner() <span class="kw">as </span>sys::c::SOCKET);
         }
     }
 }
@@ -655,6 +641,14 @@
 
 <span class="attr">#[stable(feature = <span class="string">"as_windows_ptrs"</span>, since = <span class="string">"1.71.0"</span>)]
 </span><span class="kw">impl</span>&lt;T: AsSocket&gt; AsSocket <span class="kw">for </span><span class="kw">crate</span>::rc::Rc&lt;T&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>as_socket(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BorrowedSocket&lt;<span class="lifetime">'_</span>&gt; {
+        (<span class="kw-2">**</span><span class="self">self</span>).as_socket()
+    }
+}
+
+<span class="attr">#[unstable(feature = <span class="string">"unique_rc_arc"</span>, issue = <span class="string">"112566"</span>)]
+</span><span class="kw">impl</span>&lt;T: AsSocket + <span class="question-mark">?</span>Sized&gt; AsSocket <span class="kw">for </span><span class="kw">crate</span>::rc::UniqueRc&lt;T&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>as_socket(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BorrowedSocket&lt;<span class="lifetime">'_</span>&gt; {
         (<span class="kw-2">**</span><span class="self">self</span>).as_socket()
